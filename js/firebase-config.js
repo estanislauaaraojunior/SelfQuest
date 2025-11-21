@@ -7,8 +7,13 @@ const firebaseConfig = {
     appId: "selfquest-43ced"
 };
 
+// Inicializa o Firebase (usando a compat API para manter a v9+ modular)
 firebase.initializeApp(firebaseConfig);
 
+// Exporta os serviços para serem usados em outros módulos
 export const auth = firebase.auth();
 export const db = firebase.firestore();
 export const storage = firebase.storage();
+
+// Se necessário para timestamps no Firestore
+export const FieldValue = firebase.firestore.FieldValue;
