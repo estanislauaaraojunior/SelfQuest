@@ -17,6 +17,7 @@
     <div id="authContainer" class="hidden">
         <div class="card auth-card">
             <div class="logo"><i class="fas fa-camera-retro"></i> Selfie Quest</div>
+            
             <form id="loginForm">
                 <input type="email" id="loginEmail" placeholder="Email" required>
                 <input type="password" id="loginPassword" placeholder="Senha" required>
@@ -30,6 +31,12 @@
                 <button type="submit" class="btn primary">Cadastrar</button>
                 <button type="button" class="btn ghost" id="btnShowLogin">Voltar ao Login</button>
             </form>
+
+            <hr style="margin: 15px 0;">
+            
+            <button type="button" class="btn google-btn" id="btnGoogleLogin">
+                <i class="fab fa-google"></i> Entrar com Google
+            </button>
         </div>
     </div>
 
@@ -54,14 +61,16 @@
 
                 <section class="card" id="challengesSection">
                     <h3>Desafios</h3>
-                    <div id="dailyGrid" class="daily-grid"></div>
+                    <div id="dailyGrid" class="daily-grid">
+                        <p>Desafios carregando...</p>
+                    </div>
                 </section>
             </main>
             
             <aside>
                 <div class="card">
                     <h3>Ranking</h3>
-                    <div id="rankingList"></div>
+                    <div id="rankingList">Carregando Ranking...</div>
                 </div>
             </aside>
         </div>
