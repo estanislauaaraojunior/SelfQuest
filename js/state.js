@@ -1,41 +1,49 @@
+// js/state.js
+
 import { calculateLevel } from './utils.js';
 
-// Estado inicial padrão
 const initialState = {
-    user: null, // Dados do Auth
-    profile: {  // Dados do Firestore
-        playerName: '',
-        xp: 0,
-        points: 0,
-        level: 1
-    },
+    user: null, // Dados do Auth (UID, email, etc.)
+    profile: null, // Dados do Firestore (playerName, xp, points)
     loading: false
 };
 
 class StateManager {
     constructor() {
         this.state = { ...initialState };
-        this.listeners = [];
+        this.listeners = []; // Array de funções que querem ser notificadas
     }
 
-    // Permite que a UI "escute" mudanças no estado
+    // Método para a UI se inscrever nas mudanças
     subscribe(listener) {
         this.listeners.push(listener);
     }
 
+    // Método para notificar a UI de que algo mudou
     notify() {
         this.listeners.forEach(listener => listener(this.state));
     }
 
+    /**
+     * Define o estado de autenticação (logado/deslogado).
+     */
     setUser(user) {
         this.state.user = user;
         this.notify();
     }
 
+    /**
+     * Define o perfil do jogador e calcula seu nível.
+     */
     setProfile(profileData) {
-        if (!profileData) return;
-        const levelInfo = calculateLevel(profileData.xp);
+        if (!profileData) {
+            this.state.profile = null;
+            this.notify();
+            return;
+        }
         
+        const levelInfo = calculateLevel(profileData.xp || 0); // Garante que 0 seja o valor padrão
+
         this.state.profile = {
             ...profileData,
             level: levelInfo.nivel,
