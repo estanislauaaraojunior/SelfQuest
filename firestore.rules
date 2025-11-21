@@ -1,0 +1,24 @@
+// firestore.rules
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Função auxiliar para verificar se o usuário está logado e é dono do dado
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Regras para a coleção de usuários
+    match /users/{userId} {
+      // Qualquer um pode ler (para o Ranking), mas só o dono pode escrever
+      allow read: if request.auth != null;
+      
+      // Validação de dados no servidor (IMPEDE QUE O USUÁRIO INJETE 999999 PONTOS)
+      allow update: if isOwner(userId) 
+        && request.resource.data.points >= resource.data.points // Pontos só podem aumentar ou igualar
+        && request.resource.data.xp >= resource.data.xp;        // XP só pode aumentar ou igualar
+        
+      allow create: if isOwner(userId); // Só pode criar seu próprio perfil
+    }
+  }
+}

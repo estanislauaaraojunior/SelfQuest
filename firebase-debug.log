@@ -1,0 +1,53 @@
+[debug] [2025-11-21T19:41:28.764Z] ----------------------------------------------------------------------
+[debug] [2025-11-21T19:41:28.767Z] Command:       /usr/local/bin/firebase /home/stanis/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/bin/firebase init
+[debug] [2025-11-21T19:41:28.767Z] CLI Version:   14.24.2
+[debug] [2025-11-21T19:41:28.767Z] Platform:      linux
+[debug] [2025-11-21T19:41:28.768Z] Node Version:  v20.18.2
+[debug] [2025-11-21T19:41:28.768Z] Time:          Fri Nov 21 2025 16:41:28 GMT-0300 (GMT-03:00)
+[debug] [2025-11-21T19:41:28.768Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-11-21T19:41:28.771Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /home/stanis/SelfQuest
+
+[debug] [2025-11-21T19:41:29.164Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2025-11-21T19:41:29.165Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] 
+[debug] [2025-11-21T19:42:26.770Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-11-21T19:42:26.770Z] > authorizing via signed-in user (estanislau.aarao@gmail.com)
+[debug] [2025-11-21T19:42:26.772Z] Checked if tokens are valid: false, expires at: 1762984320288
+[debug] [2025-11-21T19:42:26.773Z] Checked if tokens are valid: false, expires at: 1762984320288
+[debug] [2025-11-21T19:42:26.773Z] > refreshing access token with scopes: []
+[debug] [2025-11-21T19:42:26.777Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-11-21T19:42:26.777Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-11-21T19:42:27.439Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-11-21T19:42:27.439Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-11-21T19:42:27.448Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/selfquest-43ced [none]
+[debug] [2025-11-21T19:42:27.942Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/selfquest-43ced 200
+[debug] [2025-11-21T19:42:27.943Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/selfquest-43ced {"projectId":"selfquest-43ced","projectNumber":"563236438761","displayName":"SelfQuest","name":"projects/selfquest-43ced","resources":{"hostingSite":"selfquest-43ced"},"state":"ACTIVE","etag":"1_5650af5b-23b9-4c09-97e8-aff23266eea1"}
+[info] i  Using project selfquest-43ced (SelfQuest) . 
+[info] 
+=== Hosting Setup
+[debug] [2025-11-21T19:42:27.954Z] Checked if tokens are valid: true, expires at: 1763757746440
+[debug] [2025-11-21T19:42:27.954Z] Checked if tokens are valid: true, expires at: 1763757746440
+[debug] [2025-11-21T19:42:27.955Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/selfquest-43ced [none]
+[debug] [2025-11-21T19:42:28.315Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/selfquest-43ced 200
+[debug] [2025-11-21T19:42:28.316Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/selfquest-43ced {"projectId":"selfquest-43ced","projectNumber":"563236438761","displayName":"SelfQuest","name":"projects/selfquest-43ced","resources":{"hostingSite":"selfquest-43ced"},"state":"ACTIVE","etag":"1_5650af5b-23b9-4c09-97e8-aff23266eea1"}
+[info] 
+[info] Your public directory is the folder (relative to your project directory) that
+[info] will contain Hosting assets to be uploaded with firebase deploy. If you
+[info] have a build process for your assets, use your build's output directory.
+[info] 
