@@ -2,15 +2,11 @@
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Selfie Quest</title>
-    <link rel="manifest" href="manifest.webmanifest">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
-    <!-- Referência ao arquivo CSS externo da nova estrutura -->
     <link rel="stylesheet" href="css/style.css">
     
-    <!-- Referências aos arquivos JS do Firebase (mantidas, pois são CDN) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -18,222 +14,87 @@
 </head>
 <body>
 
-<!-- CONTEÚDO DO BODY DO index-old.html (linhas 179 até o final) -->
-<div id="authContainer" style="display: none; padding: 20px; max-width: 400px; margin: 40px auto; text-align: center;">
-  <div class="card">
-    <div class="logo" style="font-size: 24px; margin-bottom: 20px;">
-      <i class="fas fa-camera-retro"></i> Selfie Quest
+    <div id="authContainer" class="hidden">
+        <div class="card auth-card">
+            <div class="logo"><i class="fas fa-camera-retro"></i> Selfie Quest</div>
+            
+            <form id="loginForm">
+                <input type="email" id="loginEmail" placeholder="Email" required>
+                <input type="password" id="loginPassword" placeholder="Senha" required>
+                <button type="submit" class="btn primary">Entrar</button>
+                <button type="button" class="btn ghost" id="btnShowRegister">Criar conta</button>
+            </form>
+            <form id="registerForm" class="hidden">
+                <input type="text" id="regName" placeholder="Nome de Usuário" required>
+                <input type="email" id="regEmail" placeholder="Email" required>
+                <input type="password" id="regPass" placeholder="Senha" required>
+                <button type="submit" class="btn primary">Cadastrar</button>
+                <button type="button" class="btn ghost" id="btnShowLogin">Voltar ao Login</button>
+            </form>
+
+            <hr style="margin: 15px 0;">
+            
+            <button type="button" class="btn google-btn" id="btnGoogleLogin">
+                <i class="fab fa-google"></i> Entrar com Google
+            </button>
+        </div>
     </div>
-    
-    <div id="loginForm">
-      <h3 style="margin-top:0">Login</h3>
-      <input type="email" id="loginEmail" placeholder="Email">
-      <input type="password" id="loginPassword" placeholder="Senha">
-      <button class="btn primary" id="btnLogin" style="width: 100%;">Entrar</button>
-      <button class="btn ghost" id="btnShowRegister" style="width: 100%; margin-top: 8px;">Não tenho conta (Cadastrar)</button>
+
+    <div id="appContainer" class="hidden">
+        <div class="topbar">
+            <div class="logo">Selfie Quest</div>
+            <button class="icon-btn" id="btnLogout"><i class="fas fa-sign-out-alt"></i></button>
+        </div>
+
+        <div class="container">
+            <main>
+                <div class="card profile">
+                    <div class="profile-info">
+                        <h2 id="uiPlayerName">Carregando...</h2>
+                        <div class="xp-bar"><div class="xp-fill" id="uiXpFill"></div></div>
+                        <div class="stats-row">
+                            <span>Nível: <b id="uiLevel">0</b></span>
+                            <span>Pontos: <b id="uiPoints">0</b></span>
+                        </div>
+                    </div>
+                </div>
+
+                <section class="card" id="challengesSection">
+                    <h3>Desafios Atuais</h3>
+                    <div id="dailyGrid" class="daily-grid">
+                        <p>Lista de desafios aqui...</p>
+                    </div>
+                </section>
+
+                <section class="card" id="cameraSection">
+                    <h3>Novo Desafio: Selfie do Dia!</h3>
+                    <form id="uploadForm">
+                        <input type="file" id="imageUpload" accept="image/*" required style="margin-bottom: 15px;">
+                        
+                        <select id="challengeSelect" required style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="" disabled selected>Selecione o Desafio</option>
+                            <option value="selfie_sol">Selfie com o Sol (+20P, +150XP)</option>
+                            <option value="selfie_pet">Selfie com o Pet (+15P, +100XP)</option>
+                            <option value="selfie_natureza">Selfie na Natureza (+30P, +200XP)</option>
+                        </select>
+
+                        <button type="submit" class="btn primary" id="btnUploadSelfie">
+                            <i class="fas fa-cloud-upload-alt"></i> Enviar Selfie
+                        </button>
+                    </form>
+                </section>
+
+            </main>
+            
+            <aside>
+                <div class="card">
+                    <h3>Ranking</h3>
+                    <div id="rankingList">Carregando Ranking...</div>
+                </div>
+            </aside>
+        </div>
     </div>
 
-    <div id="registerForm" style="display: none;">
-       <h3 style="margin-top:0">Cadastro</h3>
-       <input type="text" id="registerUsername" placeholder="Escolha um nome de usuário">
-       <input type="email" id="registerEmail" placeholder="Email">
-       <input type="password" id="registerPassword" placeholder="Crie uma senha">
-       <input type="password" id="registerPasswordConfirm" placeholder="Confirme a senha">
-       <button class="btn primary" id="btnRegister" style="width: 100%;">Criar Conta</button>
-       <button class="btn ghost" id="btnShowLogin" style="width: 100%; margin-top: 8px;">Já tenho conta (Login)</button>
-    </div>
-
-  </div>
-</div>
-
-
-<div id="appContainer" style="display: none;">
-
-  <div class="topbar">
-    <div class="logo"><i class="fas fa-camera-retro"></i> Selfie Quest</div>
-    <div class="search"><input id="globalSearch" placeholder="Buscar..."></div>
-    <div>
-      <button class="icon-btn" id="btnShowProfile"><i class="fas fa-user"></i></button>
-      <button class="icon-btn" id="btnLogout"><i class="fas fa-sign-out-alt"></i></button>
-    </div>
-  </div>
-
-  <div class="container">
-    <main>
-      
-      <!-- Card de Perfil -->
-      <div class="card profile">
-        <div class="avatar">
-          <span id="uiAvatarInitials">SQ</span>
-          <span class="level" id="uiLevel">1</span>
-        </div>
-        <div class="profile-info">
-          <h3 style="margin:0" id="uiPlayerName">Carregando...</h3>
-          <div class="xp-bar"><div class="xp-fill" id="uiXpFill"></div></div>
-          <div class="profile-stats">
-            <span class="stat">Nível: <b id="uiLevelStat">1</b></span>
-            <span class="stat">Pontos: <b id="uiPointsStat">0</b></span>
-            <span class="stat">Missões: <b id="uiMissionsStat">0</b></span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Missão Diária -->
-      <section class="card" id="dailyMissionSection">
-        <div class="mission-header">
-          <h3 style="margin:0">Missão Diária</h3>
-          <button class="btn primary mini" id="btnMissionAction" style="display: none;">
-            <i class="fas fa-camera"></i> Enviar Selfie
-          </button>
-        </div>
-        <p id="missionDescription">Carregando missão...</p>
-        
-        <div id="missionUploadArea" class="upload-area" style="display: none;">
-          <i class="fas fa-cloud-upload-alt fa-2x"></i>
-          <p>Clique ou arraste a imagem da sua selfie aqui.</p>
-          <input type="file" id="fileUpload" accept="image/*" style="display: none;">
-        </div>
-        <img id="uploadPreview" class="upload-preview" style="display: none;">
-        
-        <div id="missionValidation" style="display: none;">
-          <h4 style="margin-top:12px">Validação</h4>
-          <div class="validation-steps">
-            <div class="v-step" id="vStep1">1. Selfie Enviada</div>
-            <div class="v-step" id="vStep2">2. Análise de IA</div>
-            <div class="v-step" id="vStep3">3. Concluído</div>
-          </div>
-        </div>
-        
-        <div id="missionFeedback" class="notice" style="display: none; margin-top: 12px;"></div>
-      </section>
-      
-      <!-- Desafios (Grid) -->
-      <section class="card">
-        <h3 style="margin:0 0 10px 0">Desafios</h3>
-        <div id="challengesGrid" class="daily-grid">
-          <!-- Desafios serão injetados aqui -->
-          <p>Carregando desafios...</p>
-        </div>
-      </section>
-      
-      <!-- Histórico de Atividades -->
-      <section class="card">
-        <h3 style="margin:0 0 10px 0">Histórico de Atividades</h3>
-        <div id="historyList" class="history-list">
-          <!-- Histórico será injetado aqui -->
-          <p>Nenhuma atividade recente.</p>
-        </div>
-      </section>
-
-    </main>
-    
-    <aside>
-      
-      <!-- Ranking -->
-      <section class="card">
-        <h3 style="margin:0 0 10px 0">Ranking Global</h3>
-        <div id="rankingList">
-          <!-- Ranking será injetado aqui -->
-          <p>Carregando ranking...</p>
-        </div>
-      </section>
-      
-      <!-- Recompensas -->
-      <section class="card">
-        <h3 style="margin:0 0 10px 0">Recompensas</h3>
-        <div class="rewards-tabs">
-          <div class="tab active" id="tabRewards">Recompensas</div>
-          <div class="tab" id="tabShop">Loja</div>
-        </div>
-        
-        <div id="rewardsContent">
-          <div id="rewardsList">
-            <!-- Recompensas serão injetadas aqui -->
-            <p>Carregando recompensas...</p>
-          </div>
-        </div>
-        
-        <div id="shopContent" style="display: none;">
-          <div class="points-system">
-            <div class="points-row">
-              <span class="points-label">Seus Pontos:</span>
-              <span class="points-value" id="uiShopPoints">0</span>
-            </div>
-          </div>
-          <div id="shopList" style="margin-top: 10px;">
-            <!-- Itens da loja serão injetados aqui -->
-            <p>Carregando loja...</p>
-          </div>
-        </div>
-      </section>
-      
-    </aside>
-  </div>
-  
-  <!-- Bottom Navigation (Mobile) -->
-  <div class="bottom-nav">
-    <button class="nav-item active" id="navHome">
-      <i class="fas fa-home"></i>
-      <span>Início</span>
-    </button>
-    <button class="nav-item" id="navChallenges">
-      <i class="fas fa-list-check"></i>
-      <span>Desafios</span>
-    </button>
-    <button class="nav-item" id="navRewards">
-      <i class="fas fa-trophy"></i>
-      <span>Recompensas</span>
-    </button>
-    <button class="nav-item" id="navProfile">
-      <i class="fas fa-user"></i>
-      <span>Perfil</span>
-    </button>
-  </div>
-  
-</div>
-
-<!-- Modal de Visualização de Selfie -->
-<div id="selfieModal" class="modal">
-  <div class="modal-card">
-    <h3 style="margin-top:0" id="modalTitle">Selfie Enviada</h3>
-    <img id="modalImage" style="max-width: 100%; border-radius: 8px; margin-bottom: 12px;">
-    <div class="preview-actions">
-      <button class="btn ghost" id="btnCloseModal">Fechar</button>
-      <button class="btn success" id="btnValidateSelfie" style="display: none;">Validar</button>
-      <button class="btn primary" id="btnApproveSelfie" style="display: none;">Aprovar</button>
-      <button class="btn ghost" id="btnRejectSelfie" style="display: none;">Rejeitar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal de Perfil (Mobile) -->
-<div id="profileModal" class="modal">
-  <div class="modal-card">
-    <h3 style="margin-top:0">Meu Perfil</h3>
-    <div class="card profile" style="box-shadow: none; padding: 0;">
-      <div class="avatar">
-        <span id="modalAvatarInitials">SQ</span>
-        <span class="level" id="modalLevel">1</span>
-      </div>
-      <div class="profile-info">
-        <h3 style="margin:0" id="modalPlayerName">Carregando...</h3>
-        <div class="xp-bar"><div class="xp-fill" id="modalXpFill"></div></div>
-        <div class="profile-stats">
-          <span class="stat">Nível: <b id="modalLevelStat">1</b></span>
-          <span class="stat">Pontos: <b id="modalPointsStat">0</b></span>
-          <span class="stat">Missões: <b id="modalMissionsStat">0</b></span>
-        </div>
-      </div>
-    </div>
-    <div class="footer-section">
-      <button class="btn ghost" id="btnCloseProfileModal" style="width: 100%;">Fechar</button>
-    </div>
-  </div>
-</div>
-
-<!-- FIM DO CONTEÚDO DO BODY -->
-
-<!-- Referência ao arquivo JS principal como módulo -->
-<script type="module" src="js/app.js"></script>
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>
