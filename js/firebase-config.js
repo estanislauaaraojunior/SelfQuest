@@ -1,10 +1,10 @@
 const firebaseConfig = {
-    apiKey: "SUA_API_KEY",
+    apiKey: "AIzaSyCOfEuhQLDDhCGLFMAucanYrQdSe1eW4ps",
     authDomain: "selfquest-43ced.firebaseapp.com",
     projectId: "selfquest-43ced",
     storageBucket: "selfquest-43ced.firebasestorage.app",
     messagingSenderId: "563236438761",
-    appId: "selfquest-43ced"
+    appId: "1:563236438761:web:fe2115e33e6d8c137ba678"
 };
 
 // Inicializa o Firebase (usando a compat API para manter a v9+ modular)
