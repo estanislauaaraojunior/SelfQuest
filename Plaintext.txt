@@ -1,0 +1,15 @@
+Plaintext
+
+/selfie-quest
+  ├── /css
+  │    └── style.css          (Todo o seu CSS vai aqui)
+  ├── /js
+  │    ├── firebase-config.js (Configuração e inicialização do Firebase)
+  │    ├── auth.js            (Gerenciamento de Login/Registro)
+  │    ├── db.js              (Interações com Firestore)
+  │    ├── state.js           (Gerenciamento do Estado Global da aplicação)
+  │    ├── ui.js              (Manipulação do DOM e atualizações visuais)
+  │    ├── utils.js           (Funções auxiliares, ex: Toast, datas)
+  │    └── app.js             (Ponto de entrada principal)
+  ├── firestore.rules         (Regras de segurança REAIS do backend)
+  └── index.html              (Apenas a estrutura HTML limpa)

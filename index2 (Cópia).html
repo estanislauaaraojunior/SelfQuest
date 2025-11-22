@@ -1,0 +1,1973 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Selfie Quest</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+<script>
+  // ======================================================
+  // ATENÇÃO: SUBSTITUA O OBJETO firebaseConfig ABAIXO!
+  // ======================================================
+  const firebaseConfig = {
+    apiKey: "AIzaSyCOfEuhQLDDhCGLFMAucanYrQdSe1eW4ps",
+    authDomain: "selfquest-43ced.firebaseapp.com",
+    projectId: "selfquest-43ced",
+    storageBucket: "selfquest-43ced.firebasestorage.app", // Necessário para upload de fotos
+    messagingSenderId: "563236438761",
+    appId: "selfquest-43ced"
+  };
+
+  // Inicializa o Firebase
+  firebase.initializeApp(firebaseConfig);
+
+  // Variáveis de referência globais
+  const db = firebase.firestore();
+  const auth = firebase.auth();
+  const storage = firebase.storage(); // Referência para o Storage
+  let CURRENT_USER_ID = null; // UID do usuário logado
+  let eventsAttached = false; // Flag para os listeners
+  
+  function showToast(message) {
+      console.log('TOAST:', message);
+      // Você pode adicionar uma implementação visual de toast aqui se desejar
+      alert(message);
+  }
+</script>
+<style>
+:root{
+/* ... estilos (MANTIDOS) ... */
+  --bg:#fafafa; --card:#ffffff; --muted:#7a7a7a;
+  --primary:#405de6; --secondary:#5851db; --accent:#ff2e63;
+  --success:#00c2a8; --shadow: 0 8px 30px rgba(0,0,0,0.06);
+  --rounded:12px;
+  --safe-pad:12px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;min-height:100vh;margin:0;font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,#fff,#f6f9ff)}
+/* CORREÇÃO PARA MOBILE: Garante que o height: 100% funcione corretamente no iOS Safari (corrigindo o problema do 100vh) */
+@supports (-webkit-touch-callout: none) {
+    html, body {
+        min-height: -webkit-fill-available;
+        height: -webkit-fill-available;
+    }
+}
+.topbar{position:sticky;top:0;background:#fff;border-bottom:1px solid #eee;padding:10px 12px;display:flex;align-items:center;gap:12px;z-index:40}
+.logo{font-weight:800;color:transparent;background:linear-gradient(45deg,var(--primary),var(--secondary));-webkit-background-clip:text}
+/* ... (outros estilos) ... */
+.search{flex:1;max-width:640px}
+.search input{width:100%;padding:8px 12px;border-radius:20px;border:1px solid #eee;background:#fafafa}
+.icon-btn{background:transparent;border:none;font-size:18px;color:var(--muted);cursor:pointer}
+/* layout */
+.container{max-width:1100px;margin:14px auto;padding:0 12px;display:grid;grid-template-columns:1fr 340px;gap:18px}
+@media(max-width:980px){.container{grid-template-columns:1fr}}
+/* cards */
+.card{background:var(--card);border-radius:var(--rounded);box-shadow:var(--shadow);padding:14px}
+.profile{display:flex;gap:12px;align-items:center}
+.avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(45deg,var(--accent),var(--primary));display:flex;align-items:center;justify:content:center;color:#fff;font-weight:800;font-size:20px;position:relative}
+.level{position:absolute;right:-6px;bottom:-6px;background:#fff;padding:6px;border-radius:50%;font-size:12px;border:1px solid #eee}
+.profile-info{flex:1}
+.xp-bar{height:10px;background:#eee;border-radius:20px;overflow:hidden;margin-top:8px}
+.xp-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));width:0;transition:width .5s}
+.profile-stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.stat{background:#fbfbfd;padding:8px 10px;border-radius:10px;border:1px solid #f1f1f5;font-weight:700;font-size:13px}
+/* mission / challenge */
+.mission-header{display:flex;justify-content:space-between;align-items:center}
+.upload-area{border:2px dashed rgba(0,0,0,0.06);border-radius:12px;padding:12px;display:flex;gap:12px;align-items:center;cursor:pointer}
+.upload-preview{max-width:100%;border-radius:10px;margin-top:8px}
+/* daily grid */
+.daily-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:10px}
+.daily-card{background:#fff;border-radius:10px;padding:10px;border:1px solid #f3f3f8;cursor:pointer;text-align:center}
+.daily-thumb{width:100%;height:110px;object-fit:cover;border-radius:8px}
+.daily-card.completed{background:linear-gradient(135deg,#f8fff8,#f0fff0);border-color:#00c2a8;cursor:default}
+.daily-card.completed::after{content:"✓ Concluído";display:block;margin-top:8px;font-size:12px;color:var(--success);font-weight:700}
+/* validation */
+.validation-steps{display:flex;gap:8px;margin-top:12px}
+.v-step{flex:1;padding:8px;border-radius:8px;background:#fafafa;border:1px solid #eee;text-align:center;font-weight:700;color:var(--muted)}
+.v-step.active{background:linear-gradient(90deg,var(--primary),var(--secondary));color:#fff;box-shadow:var(--shadow)}
+/* fitness */
+.fitness-controls{display:flex;gap:8px;align-items:center;margin-top:10px}
+.small{font-size:13px;color:var(--muted)}
+/* sidebar */
+.rewards-tabs{display:flex;gap:8px;margin-top:10px}
+.tab{flex:1;padding:8px;border-radius:8px;background:#fafafa;border:1px solid #eee;text-align:center;cursor:pointer}
+.tab.active{background:linear-gradient(90deg,var(--primary),var(--secondary));color:#fff}
+/* album */
+.album-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+@media(max-width:700px){.album-grid{grid-template-columns:repeat(2,1fr)}}
+.album-thumb{width:100%;height:100px;object-fit:cover;border-radius:8px;cursor:pointer}
+/* modal */
+.modal{position:fixed;left:0;top:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:200}
+.modal-card{width:92%;max-width:900px;background:#fff;border-radius:12px;padding:16px}
+/* buttons */
+.btn{padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+.btn.primary{background:linear-gradient(90deg,var(--primary),var(--secondary));color:#fff}
+.btn.ghost{background:transparent;border:1px solid #ddd;color:#333}
+.btn.success{background:var(--success);color:#fff}
+.btn:disabled{opacity:0.6;cursor:not-allowed}
+.notice{padding:8px;border-radius:8px;background:linear-gradient(90deg,#f7fbff,#fff);border:1px solid #e6f0ff}
+.history-list{max-height:220px;overflow:auto;margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.history-item{padding:8px;border-radius:8px;border:1px solid #f3f3f6;background:#fff}
+.small-muted{font-size:13px;color:var(--muted)}
+.footer-section{margin-top:12px}
+/* Bottom Navigation */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #eee;display:none;justify-content:space-around;padding:8px;z-index:50}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer}
+.nav-item.active{color:var(--primary)}
+/* Skeletons */
+.skeleton{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200% 100%;animation:loading 1.5s infinite;border-radius:4px}
+@keyframes loading{0%{background-position:200% 0}100%{background-position:-200% 0}}
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1a1a; --card: #2d2d2d; --muted: #a0a0a0;
+    --shadow: 0 8px 30px rgba(0,0,0,0.3);
+  }
+  body{background:linear-gradient(180deg,#1a1a1a,#2d2d2d);color:#fff}
+  .topbar,.card{background:var(--card);border-color:#444}
+  .search input{background:#333;border-color:#444;color:#fff}
+  .stat,.notice,.history-item{background:#333;border-color:#444}
+  .skeleton{background:linear-gradient(90deg,#333 25%,#444 50%,#333 75%);background-size:200% 100%}
+  .daily-card.completed{background:linear-gradient(135deg,#2d2d2d,#1a3d1a)}
+  
+  /* --- NOVO: Estilos Dark Mode para Login --- */
+  #authContainer .card { background: var(--card); }
+  #authContainer input { background: #333; border-color: #444; color: #fff; }
+  /* --- Fim do Novo --- */
+}
+/* Responsive */
+@media(max-width:768px){
+  .bottom-nav{display:flex}
+  .container{padding-bottom:60px}
+}
+/* Preview Actions */
+.preview-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.preview-actions .btn{flex:1;min-width:120px}
+/* Reward States */
+.reward-completed{background:linear-gradient(135deg,#f0fff0,#e0ffe0)!important;border-color:var(--success)!important}
+.reward-claimed{background:linear-gradient(135deg,#fff8f0,#ffe8e0)!important;border-color:#ffa500!important}
+.reward-disabled{opacity:0.5;cursor:not-allowed}
+/* Novos estilos para o sistema de pontos */
+.points-system {margin-top: 8px; padding: 8px; background: #f8f9ff; border-radius: 8px; border: 1px solid #e6ecff;}
+.points-row {display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;}
+.points-label {font-size: 13px; color: var(--muted);}
+.points-value {font-weight: 700; font-size: 13px;}
+/* Shop items */
+.shop-item {display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid #f0f0f0; border-radius: 8px; margin-bottom: 8px;}
+.shop-item:last-child {margin-bottom: 0;}
+.btn.mini {padding: 6px 10px; font-size: 12px;}
+/* --- NOVO: Estilos para inputs de login --- */
+#authContainer input {
+    width: 100%; 
+    padding: 10px; 
+    margin-bottom: 10px; 
+    border-radius: 8px; 
+    border: 1px solid #ddd;
+    background: #fafafa;
+}
+</style>
+</head>
+<body>
+
+<div id="authContainer" style="display: none; padding: 20px; max-width: 400px; margin: 40px auto; text-align: center;">
+  <div class="card">
+    <div class="logo" style="font-size: 24px; margin-bottom: 20px;">
+      <i class="fas fa-camera-retro"></i> Selfie Quest
+    </div>
+    
+    <div id="loginForm">
+      <h3 style="margin-top:0">Login</h3>
+      <input type="email" id="loginEmail" placeholder="Email">
+      <input type="password" id="loginPassword" placeholder="Senha">
+      <button class="btn primary" id="btnLogin" style="width: 100%;">Entrar</button>
+      <button class="btn ghost" id="btnShowRegister" style="width: 100%; margin-top: 8px;">Não tenho conta (Cadastrar)</button>
+    </div>
+
+    <div id="registerForm" style="display: none;">
+       <h3 style="margin-top:0">Cadastro</h3>
+       <input type="text" id="registerUsername" placeholder="Escolha um nome de usuário">
+       <input type="email" id="registerEmail" placeholder="Email">
+       <input type="password" id="registerPassword" placeholder="Crie uma senha">
+       <input type="password" id="registerPasswordConfirm" placeholder="Confirme a senha">
+       <button class="btn primary" id="btnRegister" style="width: 100%;">Criar Conta</button>
+       <button class="btn ghost" id="btnShowLogin" style="width: 100%; margin-top: 8px;">Já tenho conta (Login)</button>
+    </div>
+
+  </div>
+</div>
+
+
+<div id="appContainer" style="display: none;">
+
+  <div class="topbar">
+    <div class="logo"><i class="fas fa-camera-retro"></i> Selfie Quest</div>
+    <div class="search"><input id="globalSearch" placeholder="Buscar..."></div>
+    <div>
+      <button class="icon-btn" id="btnNotifs" title="Notificações"><i class="fas fa-bell"></i></button>
+      <button class="icon-btn" id="btnLogout" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <main>
+        <div class="card profile" aria-live="polite">
+        <div style="position:relative">
+          <div class="avatar" id="avatar">SQ</div>
+          <div class="level" id="level">12</div>
+        </div>
+        <div class="profile-info">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div>
+              <div id="playerName" style="font-weight:800;font-size:18px">Carregando...</div>
+              <div class="small-muted" id="xpText">2450 XP</div>
+            </div>
+            <div style="text-align:right">
+              <button class="btn ghost" id="openAlbumBtn"><i class="fas fa-images"></i> Álbum</button>
+            </div>
+          </div>
+
+          <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+          
+          <div class="points-system">
+            <div class="points-row">
+              <span class="points-label">Pontos:</span>
+              <span class="points-value" id="pointsValue">0</span>
+            </div>
+            <div class="points-row">
+              <span class="points-label">Tokens:</span>
+              <span class="points-value" id="tokens">0</span>
+            </div>
+            </div>
+
+          <div class="profile-stats">
+            <div class="stat">Seguidores: <span id="followers">24</span></div>
+            <div class="stat">Seguindo: <span id="following">18</span></div>
+            <div class="stat">Nível: <span id="levelDisplay">12</span></div>
+          </div>
+        </div>
+      </div>
+
+      <section class="card mission">
+        <div class="mission-header">
+          <div>
+            <div class="small-muted">Desafio Semanal</div>
+            <div id="weeklyTitle" style="font-weight:800">Carregando...</div>
+            <div class="small-muted" id="weeklyDesc"></div>
+            <div class="small-muted" style="color:var(--success); margin-top:4px">
+              <i class="fas fa-coins"></i> +50 Pontos • <i class="fas fa-star"></i> +100 XP
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end" id="weeklyControlArea">
+            <button class="btn primary" id="btnUploadWeekly"><i class="fas fa-camera"></i> Enviar</button>
+            <small class="small-muted">Escolher câmera ou galeria</small>
+          </div>
+        </div>
+
+        <div id="weeklyPreview" style="display:none;margin-top:10px">
+          <img id="weeklyImg" class="upload-preview" alt="preview semanal">
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <button class="btn primary" id="confirmWeekly">Confirmar Envio</button>
+            <button class="btn ghost" id="removeWeekly">Remover</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:800">Desafios Diários</div>
+            <div class="small-muted">Toque em um desafio → escolha Câmera ou Galeria → Confirmar</div>
+            <div class="small-muted" style="color:var(--success); margin-top:4px">
+              <i class="fas fa-coins"></i> +10 Pontos • <i class="fas fa-star"></i> +25 XP cada
+            </div>
+          </div>
+          <div class="small-muted" id="dailyCount">3 desafios</div>
+        </div>
+        <div id="dailyGrid" class="daily-grid"></div>
+      </section>
+
+      <section class="card" id="validationCard" style="display:none">
+        <div class="small-muted">Validação</div>
+        <div class="validation-steps" id="validationSteps">
+          <div class="v-step" id="vIA">IA</div>
+          <div class="v-step" id="vComm">Comunidade</div>
+          <div class="v-step" id="vFinal">Final</div>
+        </div>
+        <div id="validationResult" style="margin-top:10px"></div>
+      </section>
+
+      <section class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div class="small-muted">Modo Fitness</div>
+            <div style="font-weight:800">Ganhe pontos praticando Caminhada, Corrida ou Pedalada</div>
+            <div class="small-muted" style="color:var(--success); margin-top:4px">
+              <i class="fas fa-coins"></i> +2 pts/km • <i class="fas fa-star"></i> +0.5 XP/km
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div class="small-muted">Tempo (sessão)</div>
+            <div style="font-weight:800" id="fitnessTime">00:00</div>
+          </div>
+        </div>
+
+        <div class="fitness-controls">
+          <button class="btn primary" id="fitnessStart">Iniciar</button>
+          <button class="btn ghost" id="fitnessPause" style="display:none">Pausar</button>
+          <button class="btn ghost" id="fitnessStop" disabled>Parar</button>
+          <button class="btn primary" id="fitnessSave" style="display:none">Salvar</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>Histórico de Atividades</strong><div class="small-muted">Últimas ações</div></div>
+          <div><button class="btn ghost" id="clearHistory">Limpar</button></div>
+        </div>
+        <div class="history-list" id="historyList"></div>
+      </section>
+
+    </main>
+
+    <aside>
+        <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>Recompensas</strong><div class="small-muted">Complete e resgate</div></div>
+          <div><button class="btn ghost" id="btnViewAllRewards">Ver tudo</button></div>
+        </div>
+
+        <div class="rewards-tabs" style="margin-top:10px">
+          <div class="tab active" data-tab="daily" id="tabDaily">Diárias</div>
+          <div class="tab" data-tab="weekly" id="tabWeekly">Semanal</div>
+          <div class="tab" data-tab="monthly" id="tabMonthly">Mensal</div>
+        </div>
+
+        <div id="rewardsList" style="margin-top:12px"></div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>Ranking</strong><div class="small-muted">Top jogadores</div></div>
+          <div><button class="btn mini ghost" id="viewRankingFull">Ver</button></div>
+        </div>
+        <div id="rankingList" style="margin-top:10px"></div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>Tarefas Rápidas</strong><div class="small-muted">Ganhe pontos e XP extras</div></div>
+        </div>
+        <div id="quickTasksList" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+          
+          <div class="shop-item">
+              <div>
+                  <div style="font-weight:700">Responder Questionários</div>
+                  <div class="small-muted">
+                    <i class="fas fa-coins"></i> +15 Pontos • <i class="fas fa-star"></i> +7 XP
+                  </div>
+              </div>
+              <button class="btn primary mini" onclick="completeQuickTask(this, 'questionario', 15, 7)">Responder</button>
+          </div>
+          
+          <div class="shop-item">
+              <div>
+                  <div style="font-weight:700">Assistir Anúncios</div>
+                  <div class="small-muted">
+                    <i class="fas fa-coins"></i> +10 Pontos • <i class="fas fa-star"></i> +5 XP
+                  </div>
+              </div>
+              <button class="btn primary mini" onclick="completeQuickTask(this, 'anuncio', 10, 5)">Assistir</button>
+          </div>
+          
+          <div class="shop-item">
+              <div>
+                  <div style="font-weight:700">Resolver Captcha</div>
+                  <div class="small-muted">
+                    <i class="fas fa-coins"></i> +5 Pontos • <i class="fas fa-star"></i> +3 XP
+                  </div>
+              </div>
+              <button class="btn primary mini" onclick="completeQuickTask(this, 'captcha', 5, 3)">Resolver</button>
+          </div>
+          
+          <div class="shop-item">
+              <div>
+                  <div style="font-weight:700">Validar Fotos da Comunidade</div>
+                  <div class="small-muted">
+                    <i class="fas fa-coins"></i> +20 Pontos • <i class="fas fa-star"></i> +10 XP
+                  </div>
+              </div>
+              <button class="btn primary mini" onclick="completeQuickTask(this, 'validar_comunidade', 20, 10)">Validar Fotos</button>
+          </div>
+
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>Loja</strong><div class="small-muted">Compre itens com tokens</div></div>
+        </div>
+        <div id="shopList" style="margin-top:10px"></div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>Convidar Amigos</strong><div class="small-muted">Ganhe pontos e XP</div></div>
+          <div><button class="btn primary" id="inviteFriendsBtn">Convidar</button></div>
+        </div>
+        <div class="small-muted" style="margin-top:8px; text-align:center">
+          <i class="fas fa-coins"></i> +30 Pontos • <i class="fas fa-star"></i> +50 XP por amigo
+        </div>
+      </div>
+
+      <div class="card footer-section" style="margin-top:12px">
+        <div style="font-weight:800">Trocar Pontos por Tokens</div>
+        <div class="small-muted" style="margin-top:6px">
+          Taxa base: 1 Ponto = 0.8 Tokens<br>
+          Bônus: +1% por nível • +10% para 100+ pontos
+        </div>
+        <div style="margin-top:8px;display:flex;gap:8px">
+          <input id="sellPointsAmount" type="number" placeholder="Pontos para trocar" style="flex:1;padding:8px;border-radius:8px;border:1px solid #eee">
+          <button class="btn primary" id="sellPointsBtn">Trocar</button>
+        </div>
+        <div id="exchangeResult" style="margin-top:8px; font-size:13px; display:none"></div>
+        <div style="margin-top:12px"><strong>Transações</strong></div>
+        <div id="transactionsLog" class="small-muted" style="margin-top:8px;max-height:120px;overflow:auto"></div>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-item active" data-section="main">
+      <i class="fas fa-home"></i>
+      <span>Início</span>
+    </button>
+    <button class="nav-item" data-section="album">
+      <i class="fas fa-images"></i>
+      <span>Álbum</span>
+    </button>
+    <button class="nav-item" data-section="rewards">
+      <i class="fas fa-gift"></i>
+      <span>Recompensas</span>
+    </button>
+    <button class="nav-item" data-section="fitness">
+      <i class="fas fa-running"></i>
+      <span>Fitness</span>
+    </button>
+  </div>
+
+  <div id="chooserModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:800" id="chooserTitle">Enviar foto</div>
+        <button class="btn ghost" id="chooserClose">Fechar</button>
+      </div>
+      <div style="margin-top:12px" id="chooserBody">
+        <div style="display:flex;gap:12px;align-items:center">
+          <button class="btn primary" id="useCameraBtn"><i class="fas fa-camera"></i> Tirar foto</button>
+          <button class="btn ghost" id="useFileBtn"><i class="fas fa-image"></i> Escolher da galeria</button>
+        </div>
+
+        <div id="cameraArea" style="margin-top:12px;display:none">
+          <video id="cameraVideo" width="100%" autoplay playsinline style="border-radius:8px;background:#000"></video>
+          <div style="margin-top:8px;display:flex;gap:8px;justify-content:center">
+            <button class="btn primary" id="captureBtn">Capturar</button>
+            <button class="btn ghost" id="stopCamBtn">Parar câmera</button>
+          </div>
+        </div>
+
+        <input type="file" id="fileChooserInput" accept="image/*" style="display:none">
+        
+        <div id="chooserPreview" style="margin-top:12px;display:none">
+          <img id="previewImage" src="" style="width:100%;border-radius:8px;display:none">
+          <div class="preview-actions">
+            <button class="btn ghost" id="editImageBtn"><i class="fas fa-edit"></i> Editar</button>
+            <button class="btn primary" id="confirmUploadBtn"><i class="fas fa-check"></i> Confirmar Envio</button>
+            <button class="btn ghost" id="cancelPreviewBtn"><i class="fas fa-times"></i> Cancelar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="albumModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:800">Álbum</div>
+        <button class="btn ghost" id="albumClose">Fechar</button>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="tab active" id="albDailyTab">Desafios Diários</button>
+        <button class="tab" id="albWeeklyTab">Desafio Semanal</button>
+      </div>
+      <div id="albumContent" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <div id="editorModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:800">Editar Foto</div>
+        <button class="btn ghost" id="editorClose">Fechar</button>
+      </div>
+      <div style="margin-top:12px">
+        <canvas id="editorCanvas" style="max-width:100%;border-radius:8px"></canvas>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn ghost" id="filterNormal">Normal</button>
+          <button class="btn ghost" id="filterGrayscale">Preto & Branco</button>
+          <button class="btn ghost" id="filterSepia">Sépia</button>
+          <button class="btn ghost" id="filterVintage">Vintage</button>
+          <button class="btn ghost" id="rotateLeft"><i class="fas fa-undo"></i></button>
+          <button class="btn ghost" id="rotateRight"><i class="fas fa-redo"></i></button>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button class="btn primary" id="editorConfirm">Aplicar Edições</button>
+          <button class="btn ghost" id="editorCancel">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div> 
+<script>
+// ========== CONFIGURAÇÃO ATUALIZADA (MANTIDA) ==========
+const CONFIG = {
+// ... (CONFIG object)
+  pontos: {
+    diario: 10,
+    semanal: 50,
+    mensal: 200,
+    fitnessPorKm: 2, 
+    convite: 30,
+    sequenciaPorDia: 5,
+    bonus: {
+      completarTodosDiarios: 25,
+      validacaoRapida: 5
+    }
+  },
+  experiencia: {
+    diario: 25,
+    semanal: 100,
+    mensal: 400,
+    fitnessPorKm: 0.5, 
+    convite: 50,
+    validacao: 10,
+    recompensa: 15,
+    sequencia: {
+      diaria: 10,
+      semanal: 50,
+      mensal: 200
+    }
+  },
+  tokens: {
+    taxaBase: 0.8,
+    bonusPorNivel: 0.01,
+    bonusVolume: 0.1,
+    limiteVolume: 100
+  },
+  niveis: {
+    base: 1000,
+    fatorCrescimento: 1.15
+  },
+  validation: { baseSuccessRate: 0.7, maxFollowerBoost: 0.15, maxStreakBoost: 0.1 },
+  limits: { maxFileSize: 5 * 1024 * 1024, maxImageWidth: 800, imageQuality: 0.7 }
+};
+
+// ===================================================
+// FUNÇÃO PARA CALCULAR O NÍVEL (MANTIDA)
+// ===================================================
+function xpParaProximoNivel(nivel) {
+  return Math.floor(CONFIG.niveis.base * Math.pow(CONFIG.niveis.fatorCrescimento, nivel - 1));
+}
+
+function calcularNivel(xpAtual) {
+  let nivel = 1;
+  let xpAcumulado = 0;
+  let xpProximoNivel = xpParaProximoNivel(nivel);
+  
+  while (xpAtual >= xpAcumulado + xpProximoNivel) {
+    xpAcumulado += xpProximoNivel;
+    nivel++;
+    xpProximoNivel = xpParaProximoNivel(nivel);
+  }
+  
+  const xpAtualNivel = xpAtual - xpAcumulado;
+  const xpRestante = xpProximoNivel - xpAtualNivel;
+  
+  return {
+    nivel,
+    xpAtual: xpAtualNivel,
+    xpProximoNivel,
+    xpRestante
+  };
+}
+
+// ========== ESTADO INICIAL (Usado apenas para novos usuários no Firestore) ==========
+// Removemos a leitura do localStorage para o STATE principal.
+const INITIAL_STATE = {
+  playerName: '', // Será preenchido no cadastro
+  tokens: 5,
+  xp: 0,
+  points: 0,
+  level: 1,
+  streak: 0,
+  validated: 0,
+  totalSelfies: 0,
+  followers: 0,
+  following: 0,
+  activityHistory: [],
+  completedChallenges: {},
+  claimedRewards: {},
+  invitedFriends: 0,
+  weeklyValidated: 0,
+  monthlyValidated: 0,
+  lastWeekKey: '',
+  lastMonthKey: '',
+  weeklyCompleted: false,
+  monthlyWeeklyChallenges: 0,
+  lastSelfieDate: '' // Nova chave para o streak
+};
+
+// O objeto STATE será preenchido com os dados do Firestore após o login
+const STATE = {}; 
+Object.assign(STATE, INITIAL_STATE);
+
+// A SESSION ainda usa localStorage/memória, mas a foto deve ir para o Storage
+const SESSION = { 
+  // Estes dados ainda são voláteis de sessão/dia e não serão sincronizados no Firestore (exceto a foto, que deve ir para Storage)
+  weekly: localStorage.getItem('sq_session_weekly') || null, // Data URL da foto semanal pendente
+  daily: JSON.parse(localStorage.getItem('sq_session_daily') || '{}'), // Data URL das fotos diárias pendentes
+  fitness: { 
+    distanceKm: parseFloat(localStorage.getItem('sq_fitness_distance') || '0'), 
+    points: 0, 
+    active: localStorage.getItem('sq_fitness_active') === 'true', 
+    paused: localStorage.getItem('sq_fitness_paused') === 'true',
+    startTime: parseInt(localStorage.getItem('sq_fitness_startTime')) || null,
+    elapsedSeconds: parseInt(localStorage.getItem('sq_fitness_elapsed')) || 0, 
+    timerInterval: null
+  }
+};
+
+
+// ========== VARIÁVEIS GLOBAIS (MANTIDAS) ==========
+let stream = null;
+let pending = { type: null, id: null, data: null };
+let dailyChallenges = [];
+let currentImageForEdit = null;
+
+// ========== FUNÇÕES DE MODAL (MANTIDAS) ==========
+function openModal(id) {
+    document.getElementById(id).style.display = 'flex';
+    document.getElementById(id).setAttribute('aria-hidden', 'false');
+}
+
+function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+    document.getElementById(id).setAttribute('aria-hidden', 'true');
+    if (id === 'chooserModal') stopCamera();
+    if (id === 'albumModal') {
+        document.getElementById('albDailyTab').classList.remove('active');
+        document.getElementById('albWeeklyTab').classList.remove('active');
+    }
+}
+
+
+// ===================================================
+// PASSO 2: ATUALIZAR FUNÇÕES DE ESTADO (LOAD/SAVE)
+// ===================================================
+
+/**
+ * Carrega o estado do Firestore para a variável global STATE.
+ */
+async function loadState() {
+    if (!CURRENT_USER_ID) {
+        showToast("Erro: Usuário não logado para carregar o estado.");
+        return; 
+    }
+
+    const userDocRef = db.collection('users').doc(CURRENT_USER_ID);
+    try {
+        const doc = await userDocRef.get();
+        if (doc.exists) {
+            // Se o documento existe, carrega os dados
+            const loadedData = doc.data();
+            // Mantém a chave lastSelfieDate (para streak) fora do STATE, mas usa
+            localStorage.setItem('sq_lastSelfie', loadedData.lastSelfieDate || '');
+            
+            // Recarrega o STATE global (mesclando)
+            Object.assign(STATE, loadedData); 
+            // Garante que o nome exibido seja o do DB
+            localStorage.setItem('sq_playerName', STATE.playerName);
+            
+        } else {
+            // Se for um novo usuário, inicializa com o INITIAL_STATE e salva.
+            console.log("Novo usuário. Criando documento no Firestore.");
+            STATE.playerName = localStorage.getItem('sq_playerName') || 'Novo Jogador';
+            
+            await saveState(STATE); 
+        }
+        
+        // Finaliza a inicialização da UI
+        initGameLogic();
+
+    } catch (error) {
+        console.error("Erro ao carregar o estado do Firestore: ", error);
+        showToast("Erro ao carregar seu perfil. Tente novamente.");
+    }
+}
+
+/**
+ * Salva a parte modificada do estado no Firestore.
+ */
+function refreshAllUI() {
+  if (typeof renderProfile === "function") renderProfile();
+  if (typeof renderRewards === "function") renderRewards('daily');
+  if (typeof renderRanking === "function") renderRanking();
+  if (typeof renderHistory === "function") renderHistory();
+}
+
+async function saveState(dataToSave = STATE) {
+    if (!CURRENT_USER_ID) {
+        // ... parte já existente ...
+        return; 
+    }
+
+    dataToSave.lastSelfieDate = localStorage.getItem('sq_lastSelfie') || '';
+    const userDocRef = db.collection('users').doc(CURRENT_USER_ID);
+
+    try {
+        await userDocRef.set(dataToSave, { merge: true }); 
+
+        // 🔁 Atualiza tudo na tela assim que salvar
+        refreshAllUI();
+
+        // ... restante do código existente ...
+    } catch (error) {
+        console.error("Erro ao salvar o estado no Firestore: ", error);
+    }
+}
+// ===================================================
+// PASSO 3: LÓGICA DE AUTENTICAÇÃO (FIREBASE AUTH)
+// ===================================================
+
+/**
+ * Gerencia o estado de login do Firebase e atualiza a interface.
+ */
+auth.onAuthStateChanged(user => {
+    if (user) {
+        // Usuário logado
+        CURRENT_USER_ID = user.uid;
+        document.getElementById('authContainer').style.display = 'none';
+        document.getElementById('appContainer').style.display = 'block';
+        loadState(); // Carrega o estado do Firestore para o STATE
+    } else {
+        // Usuário deslogado
+        CURRENT_USER_ID = null;
+        document.getElementById('authContainer').style.display = 'block';
+        document.getElementById('appContainer').style.display = 'none';
+        
+        // Limpa o estado local para garantir que um novo login comece do zero
+        Object.assign(STATE, INITIAL_STATE); 
+        localStorage.clear(); // Limpa o localStorage ao deslogar
+        
+        // Reseta a flag de eventos no logout
+        eventsAttached = false; 
+    }
+});
+
+
+/**
+ * Função de Login com Firebase Auth.
+ */
+async function handleLogin() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    if (email.trim() === "" || password.trim() === "") {
+        showToast("Por favor, preencha todos os campos de login.");
+        return;
+    }
+    
+    document.getElementById('btnLogin').disabled = true;
+    
+    try {
+        await auth.signInWithEmailAndPassword(email, password);
+        // onAuthStateChanged cuidará da transição da UI e do loadState
+        showToast('Login bem-sucedido!');
+    } catch (error) {
+        showToast(`Erro no Login: ${error.message}`);
+        console.error("Login Error:", error);
+    } finally {
+        document.getElementById('btnLogin').disabled = false;
+    }
+}
+
+/**
+ * Função de Cadastro com Firebase Auth.
+ */
+async function handleRegister() {
+    const playerName = document.getElementById('registerUsername').value;
+    const email = document.getElementById('registerEmail').value;
+    const password = document.getElementById('registerPassword').value;
+    const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+    
+    if (playerName.trim() === "" || email.trim() === "" || password.trim() === "") {
+        showToast("Por favor, preencha todos os campos.");
+        return;
+    }
+    if (password !== passwordConfirm) {
+        showToast("As senhas não coincidem.");
+        return;
+    }
+    if (password.length < 6) {
+        showToast("A senha deve ter pelo menos 6 caracteres.");
+        return;
+    }
+
+    document.getElementById('btnRegister').disabled = true;
+
+    try {
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        CURRENT_USER_ID = userCredential.user.uid;
+
+        // Inicializa o documento no Firestore com o INITIAL_STATE e nome
+        const initialUserData = {
+            ...INITIAL_STATE,
+            playerName: playerName,
+            followers: 0, // Zera seguidores/seguindo
+            following: 0,
+        };
+
+        // Cria o documento inicial no Firestore e salva o nome localmente
+        await saveState(initialUserData);
+        localStorage.setItem('sq_playerName', playerName);
+
+        // onAuthStateChanged cuidará da transição da UI e do loadState
+        showToast('Cadastro e Login bem-sucedidos!');
+    } catch (error) {
+        showToast(`Erro no Cadastro: ${error.message}`);
+        console.error("Register Error:", error);
+    } finally {
+        document.getElementById('btnRegister').disabled = false;
+    }
+}
+
+/**
+ * Função de Logout com Firebase Auth.
+ */
+async function handleLogout() {
+    try {
+        await auth.signOut();
+        // onAuthStateChanged cuidará da limpeza e da transição da UI
+        showToast('Deslogado com sucesso!');
+    } catch (error) {
+        console.error("Logout Error:", error);
+        showToast("Erro ao deslogar.");
+    }
+}
+
+// ===================================================
+// FIM DAS FUNÇÕES DE AUTENTICAÇÃO
+// ===================================================
+
+
+// ========== INICIALIZAÇÃO DO JOGO (Chamada após o loadState) ==========
+function initGameLogic(){
+  checkPeriodReset(); 
+  STATE.level = calcularNivel(STATE.xp).nivel; 
+  renderProfile();
+  setWeeklyChallenge();
+  generateDailyChallenges();
+  renderRewards('daily');
+  renderShop();
+  renderRanking();
+  renderHistory();
+  
+  // Garante que os eventos da app sejam anexados apenas UMA VEZ
+  if (!eventsAttached) {
+      console.log("Anexando eventos da aplicação.");
+      attachEvents();
+      eventsAttached = true;
+  }
+}
+
+// ========== ATTACH EVENTS (Atualizado para incluir eventos Auth) ==========
+function attachEvents() {
+    // Eventos da Aplicação (são chamados APENAS UMA VEZ por initGameLogic)
+    
+    document.getElementById('btnLogout').addEventListener('click', handleLogout); // Evento para botão Sair
+    
+    // ... (Outros eventos do jogo - MANTIDOS) ...
+    document.getElementById('btnUploadWeekly')?.addEventListener('click', () => openChooser('weekly'));
+    document.getElementById('confirmWeekly')?.addEventListener('click', () => {
+        if (SESSION.weekly) {
+            // ** NOTA: AQUI VOCÊ DEVE ADICIONA A LÓGICA DE UPLOAD PARA O FIREBASE STORAGE **
+            // Por enquanto, apenas simula a validação
+            simulateValidation('weekly', 'w1', SESSION.weekly);
+        } else { showToast('Nenhuma imagem carregada para o desafio semanal.'); }
+    });
+    document.getElementById('removeWeekly')?.addEventListener('click', () => {
+        SESSION.weekly = null;
+        updateWeeklyChallengeCard(false);
+        showToast('Foto semanal removida da sessão.');
+        saveState();
+    });
+    // --- Chooser Modal Controls ---
+    document.getElementById('chooserClose').addEventListener('click', () => closeModal('chooserModal'));
+    document.getElementById('useCameraBtn').addEventListener('click', startCamera);
+    document.getElementById('stopCamBtn').addEventListener('click', stopCamera);
+    document.getElementById('captureBtn').addEventListener('click', captureImage);
+    document.getElementById('useFileBtn').addEventListener('click', () => document.getElementById('fileChooserInput').click());
+    document.getElementById('fileChooserInput').addEventListener('change', handleFileSelect);
+    
+    // (Botões de Preview)
+    document.getElementById('cancelPreviewBtn').addEventListener('click', resetChooserPreview);
+    document.getElementById('confirmUploadBtn').addEventListener('click', handleUploadConfirm);
+    document.getElementById('editImageBtn')?.addEventListener('click', openEditorModal);
+
+    // --- Album Modal Controls ---
+    document.getElementById('openAlbumBtn').addEventListener('click', () => openAlbumModal());
+    document.getElementById('albumClose').addEventListener('click', () => closeModal('albumModal'));
+    document.getElementById('albDailyTab').addEventListener('click', () => renderAlbum('daily'));
+    document.getElementById('albWeeklyTab').addEventListener('click', () => renderAlbum('weekly'));
+    
+    // --- Editor Modal Controls (Listeners principais do editor, se houver) ---
+    document.getElementById('editorClose')?.addEventListener('click', () => closeModal('editorModal'));
+    document.getElementById('editorCancel')?.addEventListener('click', () => closeModal('editorModal'));
+    document.getElementById('editorConfirm')?.addEventListener('click', applyEdits);
+    // --- Placeholder filters... ---
+    document.getElementById('filterNormal')?.addEventListener('click', () => applyFilter('none'));
+    document.getElementById('filterGrayscale')?.addEventListener('click', () => applyFilter('grayscale(100%)'));
+    document.getElementById('filterSepia')?.addEventListener('click', () => applyFilter('sepia(100%)'));
+    document.getElementById('filterVintage')?.addEventListener('click', () => applyFilter('sepia(50%) saturate(150%)'));
+    document.getElementById('rotateLeft')?.addEventListener('click', () => rotateImage(-90));
+    document.getElementById('rotateRight')?.addEventListener('click', () => rotateImage(90));
+    // --- Fitness Controls ---
+    document.getElementById('fitnessStart')?.addEventListener('click', startFitness);
+    document.getElementById('fitnessPause')?.addEventListener('click', pauseFitness);
+    document.getElementById('fitnessStop')?.addEventListener('click', stopFitness);
+    document.getElementById('fitnessSave')?.addEventListener('click', saveFitness);
+    // --- Points Exchange ---
+    document.getElementById('sellPointsBtn')?.addEventListener('click', exchangePointsForTokens);
+    // --- Nav tabs ---
+    document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            // Lógica de navegação móvel (simulada)
+            showPage('main'); // Mantém o main, apenas muda o estado visual
+            showToast('Navegação móvel simulada. Seções estão na página principal.');
+        });
+    });
+    // --- Reward Tabs ---
+    document.querySelectorAll('.rewards-tabs .tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.rewards-tabs .tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            renderRewards(this.getAttribute('data-tab'));
+        });
+    });
+    // --- Outras Ações
+    document.getElementById('inviteFriendsBtn')?.addEventListener('click', inviteFriends);
+    document.getElementById('clearHistory')?.addEventListener('click', clearHistory);
+}
+
+// ========== FUNÇÕES PRINCIPAIS ATUALIZADAS (PONTO DE MUDANÇA) ==========
+// A função saveState() foi movida para cima e usa Firestore.
+// A função loadState() foi movida para cima e usa Firestore.
+
+
+function renderProfile(){
+  const nivelInfo = calcularNivel(STATE.xp);
+  const xpAcumulado = xpParaProximoNivel(nivelInfo.nivel - 1);
+  const pct = Math.min(100, Math.round((nivelInfo.xpAtual / nivelInfo.xpProximoNivel) * 100));
+
+  document.getElementById('playerName').textContent = STATE.playerName; // Puxa do STATE (Firestore)
+  document.getElementById('xpText').textContent = `${STATE.xp} XP • ${nivelInfo.xpRestante} XP p/ nível ${nivelInfo.nivel + 1}`;
+  document.getElementById('xpFill').style.width = pct + '%';
+  document.getElementById('tokens').textContent = STATE.tokens;
+  document.getElementById('pointsValue').textContent = STATE.points;
+  // document.getElementById('streak').textContent = STATE.streak + ' dias'; // Removido
+  // document.getElementById('validated').textContent = STATE.validated; // Removido
+  // document.getElementById('totalSelfies').textContent = STATE.totalSelfies; // Removido
+  document.getElementById('level').textContent = nivelInfo.nivel;
+  document.getElementById('levelDisplay').textContent = nivelInfo.nivel;
+  STATE.level = nivelInfo.nivel;
+  updateWeeklyChallengeCard(STATE.weeklyCompleted);
+  // Não precisa de saveState() aqui, pois já é chamado na loadState e por outras funções que modificam o estado.
+}
+
+// ========== LÓGICA DE PONTOS (Atualizada para chamar a nova saveState) ==========
+window.adicionarPontosXP = function(pontos, xp, category, detail) {
+    STATE.points += pontos;
+    STATE.xp += xp;
+    
+    // Recalcula o nível
+    const novoNivelInfo = calcularNivel(STATE.xp);
+    if (novoNivelInfo.nivel > STATE.level) {
+        STATE.level = novoNivelInfo.nivel;
+        showToast(`PARABÉNS! Você subiu para o NÍVEL ${STATE.level}!`);
+    }
+
+    STATE.activityHistory.unshift({ 
+        type: category, 
+        detail: detail, 
+        points: pontos, 
+        xp: xp, 
+        timestamp: new Date().toLocaleString() 
+    });
+    if(STATE.activityHistory.length > 50) STATE.activityHistory.pop();
+    
+    // Salva apenas as chaves modificadas no Firestore
+    saveState({
+        points: STATE.points,
+        xp: STATE.xp,
+        level: STATE.level,
+        activityHistory: STATE.activityHistory
+    });
+
+    renderProfile();
+    renderHistory();
+}
+
+// ===================================================
+// DEMAIS FUNÇÕES DO JOGO (MANTIDAS)
+// * Todas as funções que modificam o STATE devem chamar saveState() no final
+// ===================================================
+
+function checkPeriodReset() { 
+    const currentWeek = getWeekKey();
+    const currentMonth = getMonthKey();
+    const today = getTodayKey();
+    
+    // Checagem de streak
+    const lastSelfieDate = localStorage.getItem('sq_lastSelfie');
+    if (lastSelfieDate && lastSelfieDate !== today) {
+        const lastDate = new Date(lastSelfieDate);
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        // Verifica se é a data de ontem (para manter o streak)
+        if (lastDate.toDateString() !== yesterday.toDateString()) {
+            STATE.streak = 0;
+            saveState({ streak: 0 }); // Salva a quebra do streak no DB
+        }
+        // Se for data de ontem, o streak é mantido e incrementado na próxima validação
+    }
+
+    if (STATE.lastWeekKey !== currentWeek) {
+        STATE.weeklyValidated = 0;
+        STATE.weeklyCompleted = false;
+        STATE.lastWeekKey = currentWeek;
+        SESSION.weekly = null;
+    }
+    if (STATE.lastMonthKey !== currentMonth) {
+        STATE.monthlyValidated = 0;
+        STATE.lastMonthKey = currentMonth;
+        STATE.monthlyWeeklyChallenges = 0;
+    }
+    // Se o dia mudou e não há entrada para o dia de hoje, limpa o SESSION.daily
+    if (Object.keys(STATE.completedChallenges).length > 0 && !STATE.completedChallenges[today]) {
+        SESSION.daily = {};
+    }
+    saveState();
+}
+
+// ... (Restante das funções: updateWeeklyChallengeCard, getWeekKey, etc. MANTIDAS) ...
+function updateWeeklyChallengeCard(completed = STATE.weeklyCompleted) {
+    const preview = document.getElementById('weeklyPreview');
+    const uploadArea = document.getElementById('weeklyControlArea');
+
+    if (completed) {
+        uploadArea.innerHTML = `<span style="font-weight:700;color:var(--success)">DESAFIO CONCLÚÍDO!</span>`;
+        preview.style.display = 'none';
+    } else if (SESSION.weekly) {
+        uploadArea.innerHTML = `<button class="btn primary" id="btnUploadWeekly"><i class="fas fa-camera"></i> Mudar Foto</button>`;
+        document.getElementById('weeklyImg').src = SESSION.weekly;
+        preview.style.display = 'block';
+    } else {
+        uploadArea.innerHTML = `<button class="btn primary" id="btnUploadWeekly"><i class="fas fa-camera"></i> Enviar</button>
+                                <small class="small-muted">Escolher câmera ou galeria</small>`;
+        preview.style.display = 'none';
+    }
+    // Reatacha o evento se o HTML foi reescrito
+    document.getElementById('btnUploadWeekly')?.addEventListener('click', () => openChooser('weekly'));
+}
+function getTodayKey(){ return new Date().toISOString().slice(0, 10); }
+function getWeekKey() { 
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+    const yearStart = new Date(d.getFullYear(), 0, 1);
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return d.getFullYear() + '-W' + weekNo.toString().padStart(2, '0');
+}
+function getMonthKey() { 
+    const d = new Date();
+    return d.getFullYear() + '-' + (d.getMonth() + 1).toString().padStart(2, '0');
+}
+function renderHistory() {
+    const list = document.getElementById('historyList');
+    list.innerHTML = STATE.activityHistory.map(item => `
+        <div class="history-item">
+            <div style="font-weight:700">${item.detail}</div>
+            <div class="small-muted">${item.timestamp}</div>
+            <div style="font-size:13px; margin-top:4px">
+                <i class="fas fa-coins" style="color:var(--primary)"></i> +${item.points} Pontos • <i class="fas fa-star" style="color:var(--secondary)"></i> +${item.xp} XP
+            </div>
+        </div>
+    `).join('');
+}
+function setWeeklyChallenge() {
+    document.getElementById('weeklyTitle').textContent = 'Selfie com um Animal de Estimação';
+    document.getElementById('weeklyDesc').textContent = 'Tire uma foto sua interagindo com um animal de estimação (cachorro, gato, pássaro, etc.).';
+    updateWeeklyChallengeCard(STATE.weeklyCompleted);
+}
+function generateDailyChallenges() {
+    dailyChallenges = [
+        { id: 'd1', title: 'Selfie no espelho' },
+        { id: 'd2', title: 'Selfie com café' },
+        { id: 'd3', title: 'Selfie com paisagem' }
+    ];
+    document.getElementById('dailyCount').textContent = `${dailyChallenges.length} desafios`;
+    renderDailyChallenges();
+}
+function isChallengeCompleted(id) {
+    const today = getTodayKey();
+    return STATE.completedChallenges[today] && STATE.completedChallenges[today].includes(id);
+}
+function renderDailyChallenges() {
+    const grid = document.getElementById('dailyGrid');
+    grid.innerHTML = '';
+    const today = getTodayKey();
+    const completedList = STATE.completedChallenges[today] || [];
+    dailyChallenges.forEach(challenge => {
+        const isCompleted = completedList.includes(challenge.id);
+        const card = document.createElement('div');
+        card.className = `daily-card ${isCompleted ? 'completed' : ''}`;
+        card.id = `card-${challenge.id}`;
+        let imgSource = `https://picsum.photos/150/110?random=${challenge.id}`;
+        if (SESSION.daily[challenge.id]) {
+            imgSource = SESSION.daily[challenge.id];
+        }
+        card.innerHTML = `
+            <img src="${imgSource}" class="daily-thumb" alt="${challenge.title}">
+            <div style="font-weight:700;margin-top:4px">${challenge.title}</div>
+        `;
+        if (!isCompleted) {
+            card.onclick = () => openChooser('daily', challenge.id);
+        }
+        grid.appendChild(card);
+    });
+}
+function markChallengeCompleted(challengeId) {
+    const today = getTodayKey();
+    if (!STATE.completedChallenges[today]) {
+        STATE.completedChallenges[today] = [];
+    }
+    if (!STATE.completedChallenges[today].includes(challengeId)) {
+        STATE.completedChallenges[today].push(challengeId);
+        saveState({ completedChallenges: STATE.completedChallenges });
+    }
+}
+function updateDailyChallengeCard(id, dataURL) {
+    const card = document.getElementById(`card-${id}`);
+    if (card) {
+        card.querySelector('.daily-thumb').src = dataURL;
+    }
+}
+function renderRewards(tab) {
+    const list = document.getElementById('rewardsList');
+    let items = [];
+    switch(tab) {
+        case 'daily':
+            items = [ { 
+                id:'rd1', 
+                title:'Completa Diário', 
+                desc:`Requer: Concluir 3 desafios diários no mesmo dia.`, 
+                reward:'100 Pontos + 50 XP', 
+                type:'daily', 
+                requiredDaily: 3, 
+                currentDaily: STATE.completedChallenges[getTodayKey()] ? STATE.completedChallenges[getTodayKey()].length : 0 
+            } ]; 
+            break;
+        case 'weekly':
+            items = [ { 
+                id:'rw1', 
+                title:'Semana Produtiva', 
+                desc:`Requer: 21 desafios diários validados E o Desafio Semanal validado.`, 
+                reward:'300 pontos + 150 XP', 
+                type:'weekly', 
+                requiredDaily: 21, 
+                currentDaily: STATE.weeklyValidated, 
+                requiredWeekly: 1, 
+                currentWeekly: STATE.weeklyCompleted ? 1 : 0 
+            } ]; 
+            break;
+        case 'monthly':
+            items = [ { 
+                id:'rm1', 
+                title:'Mestre Mensal', 
+                desc:`Requer: 90 desafios diários validados (3/dia x 30 dias) E 4 Desafios Semanais.`, 
+                reward:'600 pontos + 200 XP', 
+                type:'monthly', 
+                requiredDaily: 90, 
+                currentDaily: STATE.monthlyValidated, 
+                requiredWeekly: 4, 
+                currentWeekly: STATE.monthlyWeeklyChallenges 
+            } ]; 
+            break;
+    }
+    list.innerHTML = items.map(it => {
+        const isClaimed = isRewardClaimed(it.type);
+        const isMet = isRewardConditionMet(it.type);
+        let buttonHtml = '';
+        if (isClaimed) {
+            buttonHtml = `<button class="btn mini success" disabled><i class="fas fa-check"></i> Resgatado</button>`;
+        } else if (isMet) {
+            buttonHtml = `<button class="btn mini primary" onclick="claimReward('${it.id}', '${it.type}')">Resgatar</button>`;
+        } else {
+            let msg = '';
+            if (it.type === 'daily') {
+                const needed = it.requiredDaily - it.currentDaily;
+                msg = `Faltam ${needed} desafios`;
+            } else {
+                let neededDaily = it.requiredDaily - it.currentDaily;
+                let neededWeekly = it.requiredWeekly - it.currentWeekly;
+                if (neededDaily > 0 && neededWeekly > 0) {
+                    msg = `Faltam ${neededDaily} diários e ${neededWeekly} semanal${neededWeekly > 1 ? 'is' : ''}`;
+                } else if (neededDaily > 0) {
+                    msg = `Faltam ${neededDaily} diários`;
+                } else if (neededWeekly > 0) {
+                    msg = `Faltam ${neededWeekly} semanal${neededWeekly > 1 ? 'is' : ''}`;
+                } else {
+                    msg = 'Progresso Pendente';
+                }
+            }
+            buttonHtml = `<button class="btn mini ghost reward-disabled" disabled>${msg}</button>`;
+        }
+        
+        return `<div class="notice ${isClaimed ? 'reward-claimed' : (isMet ? 'reward-completed' : '')}">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <div>
+                            <div style="font-weight:700">${it.title}</div>
+                            <div class="small-muted">${it.desc}</div>
+                        </div>
+                        ${buttonHtml}
+                    </div>
+                </div>`;
+    }).join('');
+}
+function isRewardClaimed(rewardType) {
+    const timeKey = getTimeKeyForReward(rewardType);
+    return STATE.claimedRewards[rewardType] === timeKey;
+}
+function markRewardClaimed(rewardType) {
+    const timeKey = getTimeKeyForReward(rewardType);
+    STATE.claimedRewards[rewardType] = timeKey;
+    saveState({ claimedRewards: STATE.claimedRewards });
+}
+function getTimeKeyForReward(rewardType) {
+    switch(rewardType) {
+        case 'daily': return getTodayKey();
+        case 'weekly': return getWeekKey();
+        case 'monthly': return getMonthKey();
+        default: return getTodayKey();
+    }
+}
+function isRewardConditionMet(rewardType) {
+    if (rewardType === 'daily') {
+        const completedToday = STATE.completedChallenges[getTodayKey()] ? STATE.completedChallenges[getTodayKey()].length : 0;
+        return completedToday >= 3;
+    }
+    if (rewardType === 'weekly') {
+        return STATE.weeklyValidated >= 21 && STATE.weeklyCompleted;
+    }
+    if (rewardType === 'monthly') {
+        return STATE.monthlyValidated >= 90 && STATE.monthlyWeeklyChallenges >= 4;
+    }
+    return false;
+}
+window.claimReward = function(id, type) {
+    if (!isRewardConditionMet(type) || isRewardClaimed(type)) return;
+
+    let pontos = 0;
+    let xp = 0;
+    if (type === 'daily') {
+        pontos = 100; xp = 50;
+    } else if (type === 'weekly') {
+        pontos = 300; xp = 150;
+    } else if (type === 'monthly') {
+        pontos = 600; xp = 200;
+    }
+
+    adicionarPontosXP(pontos, xp, 'reward_claim', `Recompensa ${type.toUpperCase()} resgatada!`);
+    markRewardClaimed(type);
+    showToast(`Recompensa resgatada! +${pontos} Pontos e +${xp} XP.`);
+    renderRewards(type);
+}
+async function renderRanking() {
+  const rankingList = document.getElementById('rankingList');
+  // Exibe um carregador enquanto a consulta é realizada
+  rankingList.innerHTML = '<div class="small-muted" style="text-align:center">Carregando Ranking...</div>';
+
+  try {
+    // 1. Consulta ao Firestore: Busca os 10 usuários com mais XP
+    const usersRef = db.collection('users');
+    
+    // Ordena pela maior experiência ('xp') de forma descendente e limita a 10 resultados.
+    const snapshot = await usersRef.orderBy('xp', 'desc').limit(10).get();
+
+    let rank = 1;
+    const topPlayers = [];
+
+    // 2. Processa os resultados
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      // Identifica o usuário logado para destacá-lo
+      // Verifica se a variável CURRENT_USER_ID está disponível e corresponde ao ID do documento.
+      const isCurrentUser = typeof CURRENT_USER_ID !== 'undefined' && doc.id === CURRENT_USER_ID;
+      
+      // Utiliza a função 'calcularNivel' existente para determinar o nível com base no XP.
+      const nivelInfo = calcularNivel(data.xp).nivel;
+      
+      topPlayers.push({
+        rank: rank++,
+        name: data.playerName || 'Nome Oculto', // Garante que há um nome, mesmo que não preenchido
+        level: nivelInfo,
+        points: data.points
+      });
+    });
+
+    // 3. Renderiza a lista de ranking
+    if (topPlayers.length === 0) {
+      rankingList.innerHTML = '<div class="small-muted" style="text-align:center">Nenhum outro jogador encontrado.</div>';
+      return;
+    }
+
+    rankingList.innerHTML = topPlayers.map(p => `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px; ${p.name.includes('(Você)') ? 'font-style:italic; background:#f7fbff; padding: 4px; border-radius: 4px;' : ''}">
+        <div style="font-weight:700">${p.rank}. ${p.name}${p.name.includes('(Você)') ? '' : p.name.includes(CURRENT_USER_ID) ? ' (Você)' : ''}</div>
+        <div class="small-muted">Nível ${p.level} / ${p.points} Pts</div>
+      </div>
+    `).join('');
+
+  } catch (error) {
+    console.error("Erro ao carregar o Ranking: ", error);
+    // Adiciona o showToast() que existe no código para feedback visual
+    // showToast("Erro ao carregar o ranking."); 
+    rankingList.innerHTML = '<div class="small-muted" style="color:var(--accent); text-align:center">Erro ao carregar o ranking. Verifique o console.</div>';
+  }
+}
+function openChooser(type, id) {
+    if (type === 'daily' && isChallengeCompleted(id)) { showToast('Desafio diário já concluído. Tente outro.'); return; } 
+    pending.type = type; 
+    pending.id = id; 
+    pending.data = null; 
+    document.getElementById('chooserTitle').textContent = `Enviar Foto para ${type === 'weekly' ? 'Desafio Semanal' : `Desafio Diário ${id.slice(1)}`}`;
+    resetChooserPreview();
+    openModal('chooserModal');
+}
+function handleUploadConfirm() { 
+    if (!pending.data) { showToast('Nenhuma imagem para confirmar.'); return; } 
+    const dataURL = pending.data; 
+    
+    if (pending.type === 'weekly') { 
+        SESSION.weekly = dataURL; 
+        updateWeeklyChallengeCard(false); 
+        showToast('Foto semanal carregada! Confirme o envio no card principal.');
+    } else if (pending.type === 'daily') { 
+        SESSION.daily[pending.id] = dataURL; 
+        updateDailyChallengeCard(pending.id, dataURL); 
+        showToast(`Foto para desafio ${pending.id.slice(1)} carregada! Iniciando validação...`);
+        // Simula a validação imediata para Desafios Diários (protótipo)
+        simulateValidation('daily', pending.id, dataURL);
+    } 
+    closeModal('chooserModal'); 
+    saveState(); 
+}
+function simulateValidation(type, id, dataURL) {
+    openModal('validationCard');
+    document.getElementById('validationCard').style.display = 'block';
+    document.getElementById('vIA').classList.add('active');
+    document.getElementById('vComm').classList.remove('active');
+    document.getElementById('vFinal').classList.remove('active');
+    document.getElementById('validationResult').innerHTML = 'Validando com IA...';
+
+    // Step 1: IA (Instant)
+    setTimeout(() => {
+        document.getElementById('vIA').classList.remove('active');
+        document.getElementById('vComm').classList.add('active');
+        document.getElementById('validationResult').innerHTML = 'Aguardando validação da Comunidade (Simulação de 3 segundos)...';
+
+        // Step 2: Comunidade (Simulação)
+        setTimeout(() => {
+            document.getElementById('vComm').classList.remove('active');
+            document.getElementById('vFinal').classList.add('active');
+            
+            // Lógica de sucesso/falha (simplificada: 90% de chance de sucesso)
+            const successRate = CONFIG.validation.baseSuccessRate; 
+            const boost = (STATE.followers / 100) * CONFIG.validation.maxFollowerBoost;
+            const finalRate = Math.min(1.0, successRate + boost);
+            const success = Math.random() < finalRate;
+            
+            finalizeValidation(type, id, dataURL, success);
+
+        }, 3000); 
+    }, 100);
+}
+
+
+// ===================================================
+// FUNÇÃO finalizeValidation CORRIGIDA
+// (Inclui correção para Semanal e Mensal)
+// ===================================================
+function finalizeValidation(type,id,dataURL,success){
+    const validationResult = document.getElementById('validationResult');
+    const successRate = CONFIG.validation.baseSuccessRate;
+    const boost = (STATE.followers / 100) * CONFIG.validation.maxFollowerBoost;
+    // NOTE: A lógica de boost de streak no cálculo da taxa de sucesso foi omitida por simplicidade, 
+    // mantendo apenas a implementação da contagem de dias da sequência (streak).
+    const finalRate = Math.min(1.0, successRate + boost);
+    
+    let xpGanho = 0;
+    let pontosGanho = 0;
+    let streakIncremented = false; // Flag para a mensagem de sucesso
+
+    if (success) {
+        STATE.validated += 1;
+        STATE.totalSelfies += 1;
+
+        if (type === 'weekly') {
+            xpGanho = CONFIG.experiencia.semanal;
+            pontosGanho = CONFIG.pontos.semanal;
+            STATE.weeklyCompleted = true;
+            
+            // <-- CORREÇÃO PARA O MENSAL DE DESAFIO SEMANAL -->
+            STATE.monthlyValidated = (STATE.monthlyValidated || 0) + 7; 
+            STATE.monthlyWeeklyChallenges = (STATE.monthlyWeeklyChallenges || 0) + 1; 
+            
+            // Salva o weeklyCompleted e outras contagens no Firestore
+            saveState({ 
+                validated: STATE.validated, 
+                totalSelfies: STATE.totalSelfies, 
+                weeklyCompleted: true,
+                monthlyValidated: STATE.monthlyValidated, // <-- CORREÇÃO: ADICIONADO PARA O MENSAL
+                monthlyWeeklyChallenges: STATE.monthlyWeeklyChallenges // <-- CORREÇÃO: ADICIONADO PARA O MENSAL
+            });
+            
+        } else if (type === 'daily') {
+            markChallengeCompleted(id);
+            
+            // <-- CORREÇÃO JÁ FEITA ANTERIORMENTE PARA O SEMANAL -->
+            STATE.weeklyValidated = (STATE.weeklyValidated || 0) + 1; 
+            
+            // <-- CORREÇÃO: Incrementa o contador de validações do MÊS (1 por desafio diário)
+            STATE.monthlyValidated = (STATE.monthlyValidated || 0) + 1; 
+
+            xpGanho = CONFIG.experiencia.diario;
+            pontosGanho = CONFIG.pontos.diario;
+            
+            // --- LÓGICA DE STREAK (CORREÇÃO PARA A CONTAGEM DE DIAS) ---
+            const today = getTodayKey();
+            const lastSelfieDate = localStorage.getItem('sq_lastSelfie');
+            let currentStreak = STATE.streak;
+            
+            // Verifica se já validou algo HOJE. O incremento só ocorre na primeira validação do dia.
+            if (!lastSelfieDate || new Date(lastSelfieDate).toDateString() !== new Date().toDateString()) {
+                
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                // 1. Continuação da sequência (Last Selfie foi ontem)
+                if (lastSelfieDate && new Date(lastSelfieDate).toDateString() === yesterday.toDateString()) {
+                    currentStreak += 1;
+                    streakIncremented = true;
+                    // Aplica bônus de sequência (Pontos e XP)
+                    xpGanho += CONFIG.experiencia.sequencia.diaria;
+                    pontosGanho += CONFIG.pontos.sequenciaPorDia;
+
+                // 2. Início da sequência (Primeira selfie de todas)
+                } else if (!lastSelfieDate) {
+                    currentStreak = 1;
+                    streakIncremented = true;
+                }
+                
+                // Atualiza a última data de selfie para HOJE
+                localStorage.setItem('sq_lastSelfie', today);
+                STATE.streak = currentStreak;
+                
+                // Salva o novo valor de streak e contagens no DB
+                saveState({ 
+                    validated: STATE.validated, 
+                    totalSelfies: STATE.totalSelfies, 
+                    streak: currentStreak,
+                    weeklyValidated: STATE.weeklyValidated, 
+                    monthlyValidated: STATE.monthlyValidated, // <-- CORREÇÃO: ADICIONADO PARA O MENSAL
+                    monthlyWeeklyChallenges: STATE.monthlyWeeklyChallenges // <-- CORREÇÃO: ADICIONADO PARA O MENSAL
+                });
+            } else {
+                // Se já validou hoje, apenas salva a atualização de validated/totalSelfies
+                saveState({ 
+                    validated: STATE.validated, 
+                    totalSelfies: STATE.totalSelfies,
+                    weeklyValidated: STATE.weeklyValidated, 
+                    monthlyValidated: STATE.monthlyValidated, // <-- CORREÇÃO: ADICIONADO PARA O MENSAL
+                    monthlyWeeklyChallenges: STATE.monthlyWeeklyChallenges // <-- CORREÇÃO: ADICIONADO PARA O MENSAL
+                });
+            }
+            // --- FIM DA LÓGICA DE STREAK ---
+
+            // Bônus por completar todos os diários
+            const completedToday = STATE.completedChallenges[today] ? STATE.completedChallenges[today].length : 0;
+            if (completedToday === dailyChallenges.length) {
+                pontosGanho += CONFIG.pontos.bonus.completarTodosDiarios;
+                showToast("Bônus: Todos os desafios diários concluídos!");
+            }
+        }
+
+        // Adiciona pontos e XP (função que aplica o ganho ao STATE)
+        adicionarPontosXP(pontosGanho, xpGanho, type, `Validação de ${type === 'weekly' ? 'Desafio Semanal' : `Desafio Diário ${id.slice(1)}`}`);
+
+        // Texto da mensagem de sucesso
+        let streakText = '';
+        if (type === 'daily' && streakIncremented) {
+            streakText = `(Bônus de Sequência) e +${CONFIG.pontos.sequenciaPorDia} Pontos e +${CONFIG.experiencia.sequencia.diaria} XP`;
+        }
+        
+        // Atualiza a visualização do resultado
+        validationResult.innerHTML = `
+            <div style="font-weight:800;color:var(--success);margin-top:10px"> 
+                ✅ SUCESSO! Foto Validada! 
+            </div> 
+            <div class="small-muted"> 
+                Você ganhou +${pontosGanho} Pontos ${streakText} e +${xpGanho} XP. 
+            </div> 
+            <button class="btn primary" style="margin-top:10px" onclick="closeModal('validationCard')">OK</button> 
+        `;
+        
+    } else {
+        // Lógica de falha
+        STATE.totalSelfies += 1; 
+        saveState({ totalSelfies: STATE.totalSelfies }); 
+        validationResult.innerHTML = ` 
+            <div style="font-weight:800;color:var(--accent);margin-top:10px"> 
+                ❌ FALHA! Foto não validada. 
+            </div> 
+            <div class="small-muted"> 
+                Sua foto não atendeu aos critérios. Tente novamente! 
+            </div> 
+            <button class="btn primary" style="margin-top:10px" onclick="closeModal('validationCard')">OK</button> 
+        `;
+    }
+    
+    // Atualiza a interface do perfil (para mostrar o novo streak/pontos/xp)
+    renderProfile();
+    // Atualiza a interface de recompensas (para mostrar o novo progresso semanal e mensal)
+    renderRewards('weekly');
+    renderRewards('monthly');
+}
+// ===================================================
+// FIM DA FUNÇÃO finalizeValidation CORRIGIDA
+// ===================================================
+
+
+function startCamera() {
+    // Note o uso de async/await ou .then/.catch
+    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+        .then(stream => {
+            // Lógica de sucesso: Conecta o stream ao elemento <video>
+            const videoElement = document.getElementById('cameraFeed');
+            videoElement.srcObject = stream;
+        })
+        .catch(error => {
+            // Lógica de erro: ISSO IMPEDE O TRAVAMENTO DO JOGO
+            console.error('Erro ao acessar a câmera:', error);
+            
+            // É fundamental mostrar uma mensagem para o usuário
+            showToast('Erro: A câmera não pode ser acessada. Certifique-se de estar usando HTTPS.', 'error');
+            
+            // Opcional: Desabilite funcionalidades que dependem da câmera
+            document.getElementById('captureButton').disabled = true;
+        });
+}
+function stopCamera() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+    }
+    document.getElementById('cameraArea').style.display = 'none';
+    document.getElementById('useCameraBtn').disabled = false;
+}
+function captureImage() {
+    const video = document.getElementById('cameraVideo');
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Redimensionamento para o limite
+    const maxWidth = CONFIG.limits.maxImageWidth;
+    if (canvas.width > maxWidth) {
+        canvas.height *= maxWidth / canvas.width;
+        canvas.width = maxWidth;
+        const tempCtx = canvas.getContext('2d');
+        tempCtx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    }
+
+    const dataURL = canvas.toDataURL('image/jpeg', CONFIG.limits.imageQuality);
+    document.getElementById('previewImage').src = dataURL;
+    document.getElementById('previewImage').style.display = 'block';
+    document.getElementById('chooserPreview').style.display = 'block';
+    pending.data = dataURL;
+    document.getElementById('cameraArea').style.display = 'none';
+    stopCamera();
+}
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) { event.target.value = ''; return; }
+
+    if (file.size > CONFIG.limits.maxFileSize) {
+        showToast('O arquivo é muito grande (Máx: 5MB).');
+        event.target.value = ''; 
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            let width = img.width;
+            let height = img.height;
+            const maxWidth = CONFIG.limits.maxImageWidth;
+
+            if (width > maxWidth) {
+                height *= maxWidth / width;
+                width = maxWidth;
+            }
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            const dataURL = canvas.toDataURL('image/jpeg', CONFIG.limits.imageQuality);
+            document.getElementById('previewImage').src = dataURL;
+            document.getElementById('previewImage').style.display = 'block';
+            document.getElementById('chooserPreview').style.display = 'block';
+            pending.data = dataURL; 
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    
+    // NOTA: Não é necessário limpar o event.target.value aqui,
+    // porque o 'resetChooserPreview()' já faz isso toda vez que o modal é aberto,
+    // o que garante que o 'change' event dispare mesmo se o mesmo arquivo for selecionado.
+}
+function resetChooserPreview() {
+    document.getElementById('previewImage').style.display = 'none';
+    document.getElementById('chooserPreview').style.display = 'none';
+    document.getElementById('cameraArea').style.display = 'none';
+    document.getElementById('fileChooserInput').value = ''; 
+    pending.data = null;
+    stopCamera();
+}
+function openAlbumModal() {
+    openModal('albumModal');
+    renderAlbum('daily'); // Começa na aba diária
+}
+function renderAlbum(type) {
+    const albumContent = document.getElementById('albumContent');
+    albumContent.innerHTML = '';
+    
+    document.getElementById('albDailyTab').classList.remove('active');
+    document.getElementById('albWeeklyTab').classList.remove('active');
+    document.getElementById(type === 'daily' ? 'albDailyTab' : 'albWeeklyTab').classList.add('active');
+
+    const grid = document.createElement('div');
+    grid.className = 'album-grid';
+
+    if (type === 'daily') {
+        // Coleta todas as fotos diárias validadas (armazenadas em completedChallenges)
+        let dailyPhotos = [];
+        for (const date in STATE.completedChallenges) {
+            STATE.completedChallenges[date].forEach(id => {
+                // Como não estamos usando Storage, as fotos não estão mais no STATE.daily
+                // Esta parte seria alterada para buscar a URL do Firestore/Storage
+                dailyPhotos.push({
+                    src: 'https://via.placeholder.com/100x100?text=Diario', // Placeholder para simulação
+                    title: `Desafio ${id} em ${date}`
+                });
+            });
+        }
+        
+        if (dailyPhotos.length === 0) {
+            albumContent.innerHTML = '<p class="small-muted" style="text-align:center">Nenhum desafio diário validado ainda.</p>';
+            return;
+        }
+
+        dailyPhotos.forEach(photo => {
+            const img = document.createElement('img');
+            img.src = photo.src;
+            img.className = 'album-thumb';
+            img.onclick = () => openImageModal(photo.src, photo.title);
+            grid.appendChild(img);
+        });
+
+    } else if (type === 'weekly') {
+        // Aqui buscaríamos o histórico de fotos semanais do Firestore
+        // Para simulação, usamos a SESSION, se houver
+        if (SESSION.weekly) {
+            const img = document.createElement('img');
+            img.src = SESSION.weekly;
+            img.className = 'album-thumb';
+            img.onclick = () => openImageModal(SESSION.weekly, 'Desafio Semanal (Sessão)');
+            grid.appendChild(img);
+        } else {
+            albumContent.innerHTML = '<p class="small-muted" style="text-align:center">Nenhum desafio semanal encontrado.</p>';
+            return;
+        }
+    }
+    albumContent.appendChild(grid);
+}
+function openImageModal(src, title) {
+    const m = document.createElement('div');
+    m.className = 'modal';
+    m.style.display = 'flex';
+    m.innerHTML = `
+        <div class="modal-card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="font-weight:800">${title}</div>
+                <button class="btn ghost close-btn">Fechar</button>
+            </div>
+            <div style="margin-top:10px">
+                <img src="${src}" style="width:100%;border-radius:8px;object-fit:contain">
+            </div>
+        </div>
+    `;
+    document.body.appendChild(m);
+    m.querySelector('.close-btn').addEventListener('click', () => document.body.removeChild(m));
+}
+function saveFitness() {
+    if (!SESSION.fitness.distanceKm) { showToast('Nenhuma atividade para salvar.'); return; }
+    const pointsGained = Math.round(SESSION.fitness.distanceKm * CONFIG.pontos.fitnessPorKm);
+    const xpGained = Math.round(SESSION.fitness.distanceKm * CONFIG.experiencia.fitnessPorKm);
+    adicionarPontosXP(pointsGained, xpGained, 'fitness_session', `Fitness: ${SESSION.fitness.distanceKm.toFixed(2)} km`);
+    _resetFitnessSession(); 
+    showToast(`Sessão salva: +${pointsGained} pontos e +${xpGained} XP!`);
+}
+function exchangePointsForTokens() {
+    const input = document.getElementById('sellPointsAmount');
+    const amount = parseInt(input.value);
+    const resultDiv = document.getElementById('exchangeResult');
+    resultDiv.style.display = 'block';
+
+    if (isNaN(amount) || amount <= 0) { resultDiv.textContent = 'Insira uma quantidade válida de pontos.'; return; }
+    if (amount > STATE.points) { resultDiv.textContent = `Você só tem ${STATE.points} pontos.`; return; } 
+
+    let rate = CONFIG.tokens.taxaBase;
+    rate += STATE.level * CONFIG.tokens.bonusPorNivel;
+    if (amount >= CONFIG.tokens.limiteVolume) { rate += CONFIG.tokens.bonusVolume; }
+    
+    const tokensGained = Math.floor(amount * rate);
+    STATE.points -= amount;
+    STATE.tokens += tokensGained;
+    
+    // Atualiza log (Simulação, este log deve ir para o Firestore em um app real)
+    const log = document.getElementById('transactionsLog');
+    log.innerHTML = `
+        <div style="border-bottom: 1px solid #eee; padding-bottom: 4px; margin-bottom: 4px;">
+            ${new Date().toLocaleDateString()} - Troca: ${amount} Pts por ${tokensGained} Tokens (Taxa: ${rate.toFixed(2)})
+        </div>
+        ${log.innerHTML}
+    `;
+
+    resultDiv.textContent = `Troca bem-sucedida! Recebeu ${tokensGained} Tokens.`;
+    input.value = '';
+    renderProfile();
+    // Salva as chaves modificadas
+    saveState({ points: STATE.points, tokens: STATE.tokens });
+}
+window.completeQuickTask = function(button, type, pontos, xp) {
+    let detail = '';
+    let taskName = '';
+    let originalText = button.innerHTML; 
+
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; 
+
+    switch(type) {
+        case 'questionario': taskName = 'Questionário'; detail = 'Questionário rápido respondido'; break;
+        case 'anuncio': taskName = 'Anúncio'; detail = 'Anúncio assistido'; break;
+        case 'captcha': taskName = 'Captcha'; detail = 'Captcha resolvido'; break;
+        case 'validar_comunidade': taskName = 'Validação'; detail = 'Foto da comunidade validada'; break;
+    }
+
+    setTimeout(() => {
+        adicionarPontosXP(pontos, xp, `tarefa_rapida_${type}`, detail);
+        showToast(`${taskName} completo! +${pontos} pontos e +${xp} XP.`);
+        button.disabled = false;
+        button.innerHTML = originalText;
+    }, 1500); 
+}
+function inviteFriends() {
+    STATE.invitedFriends += 1;
+    const pontos = CONFIG.pontos.convite;
+    const xp = CONFIG.experiencia.convite;
+    adicionarPontosXP(pontos, xp, 'convite', 'Amigo convidado com sucesso!');
+    saveState({ invitedFriends: STATE.invitedFriends });
+    showToast(`Amigo convidado! +${pontos} Pontos e +${xp} XP.`);
+}
+function clearHistory() {
+    STATE.activityHistory = [];
+    saveState({ activityHistory: [] });
+    renderHistory();
+    showToast('Histórico de atividades limpo.');
+}
+function renderShop() {
+    const items = [
+        { name: 'Filtro Exclusivo', cost: 10, detail: 'Acesso a filtros de edição premium.' },
+        { name: 'Slot de Desafio Extra', cost: 20, detail: 'Habilita 1 desafio diário extra hoje.' },
+        { name: 'Boost de XP (1h)', cost: 50, detail: 'Dobra todo o XP ganho por 1 hora.' }
+    ];
+    const shopList = document.getElementById('shopList');
+    shopList.innerHTML = items.map(item => `
+        <div class="shop-item">
+            <div>
+                <div style="font-weight:700">${item.name}</div>
+                <div class="small-muted">Custo: ${item.cost} Tokens</div>
+            </div>
+            <button class="btn primary mini" onclick="buyShopItem(${item.cost}, '${item.name}')">Comprar</button>
+        </div>
+    `).join('');
+}
+window.buyShopItem = function(cost, name) {
+    if (STATE.tokens >= cost) {
+        STATE.tokens -= cost;
+        saveState({ tokens: STATE.tokens });
+        renderProfile();
+        adicionarPontosXP(0, 15, 'shop_purchase', `Compra: ${name}`); // Dá um pequeno XP por comprar
+        showToast(`Item "${name}" comprado com sucesso!`);
+    } else {
+        showToast(`Você precisa de ${cost} Tokens, mas tem apenas ${STATE.tokens}.`);
+    }
+}
+function updateFitnessTimer() {
+    const seconds = SESSION.fitness.elapsedSeconds;
+    const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+    const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+    const s = String(seconds % 60).padStart(2, '0');
+    document.getElementById('fitnessTime').textContent = `${h}:${m}:${s}`;
+    
+    // Simulação de distância (1km a cada 10 minutos ou 600 segundos)
+    SESSION.fitness.distanceKm = SESSION.fitness.elapsedSeconds / 600; 
+    
+    const kmText = SESSION.fitness.distanceKm.toFixed(2);
+    const kmDiv = document.querySelector('.card:nth-child(5) .small-muted:nth-child(3)');
+    kmDiv.innerHTML = `<i class="fas fa-coins"></i> +${(SESSION.fitness.distanceKm * CONFIG.pontos.fitnessPorKm).toFixed(2)} pts/km (Atual: ${kmText} km)`;
+}
+function _resetFitnessSession() {
+    clearInterval(SESSION.fitness.timerInterval);
+    SESSION.fitness.timerInterval = null;
+    SESSION.fitness.elapsedSeconds = 0;
+    SESSION.fitness.distanceKm = 0;
+    SESSION.fitness.points = 0;
+    SESSION.fitness.active = false;
+    SESSION.fitness.paused = false;
+    document.getElementById('fitnessStart').textContent = 'Iniciar';
+    document.getElementById('fitnessStart').style.display = 'inline-block';
+    document.getElementById('fitnessPause').style.display = 'none';
+    document.getElementById('fitnessStop').disabled = true;
+    document.getElementById('fitnessSave').style.display = 'none';
+    updateFitnessTimer();
+    saveState();
+}
+function startFitness() {
+    const startBtn = document.getElementById('fitnessStart');
+    if (startBtn.textContent === 'Iniciar' && SESSION.fitness.elapsedSeconds > 0) {
+        _resetFitnessSession(); 
+        showToast('Sessão anterior descartada. Iniciando nova.');
+    }
+
+    if (SESSION.fitness.timerInterval) return;
+
+    SESSION.fitness.active = true;
+    SESSION.fitness.paused = false;
+    SESSION.fitness.startTime = Date.now() - (SESSION.fitness.elapsedSeconds * 1000); 
+
+    document.getElementById('fitnessStart').style.display = 'none';
+    document.getElementById('fitnessPause').style.display = 'inline-block';
+    document.getElementById('fitnessStop').disabled = false;
+    document.getElementById('fitnessSave').style.display = 'none'; 
+
+    SESSION.fitness.timerInterval = setInterval(() => {
+        if (!SESSION.fitness.paused) {
+            SESSION.fitness.elapsedSeconds++;
+            updateFitnessTimer();
+            if (SESSION.fitness.elapsedSeconds % 60 === 0) saveState();
+        }
+    }, 1000);
+
+    showToast('Modo Fitness iniciado!');
+    saveState();
+}
+function pauseFitness() {
+    clearInterval(SESSION.fitness.timerInterval);
+    SESSION.fitness.timerInterval = null;
+    SESSION.fitness.paused = true;
+    document.getElementById('fitnessStart').textContent = 'Continuar';
+    document.getElementById('fitnessStart').style.display = 'inline-block';
+    document.getElementById('fitnessPause').style.display = 'none';
+    document.getElementById('fitnessSave').style.display = 'inline-block'; 
+    showToast('Modo Fitness pausado. Salve ou continue.');
+    saveState();
+}
+function stopFitness() {
+    clearInterval(SESSION.fitness.timerInterval);
+    SESSION.fitness.timerInterval = null;
+    SESSION.fitness.paused = true;
+    document.getElementById('fitnessStart').textContent = 'Iniciar';
+    document.getElementById('fitnessStart').style.display = 'inline-block';
+    document.getElementById('fitnessPause').style.display = 'none';
+    document.getElementById('fitnessStop').disabled = true;
+    document.getElementById('fitnessSave').style.display = 'inline-block'; 
+    showToast('Modo Fitness encerrado. Salve sua sessão.');
+    saveState();
+}
+function openEditorModal() { /* ... */ } // Lógica de edição de imagem
+function applyEdits() { /* ... */ } // Lógica de aplicação de filtros
+function applyFilter(filter) { /* ... */ } // Lógica de filtro
+function rotateImage(angle) { /* ... */ } // Lógica de rotação
+
+
+// Garante que o attachEvents seja chamado, a única chamada direta a init é a onAuthStateChanged
+document.addEventListener('DOMContentLoaded', () => {
+    // Adiciona os event listeners iniciais APENAS para a tela de Auth
+    document.getElementById('btnLogin').addEventListener('click', handleLogin);
+    document.getElementById('btnRegister').addEventListener('click', handleRegister);
+    document.getElementById('btnShowRegister').addEventListener('click', () => {
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('registerForm').style.display = 'block';
+    });
+    document.getElementById('btnShowLogin').addEventListener('click', () => {
+        document.getElementById('loginForm').style.display = 'block';
+        document.getElementById('registerForm').style.display = 'none';
+    });
+    
+    // O auth.onAuthStateChanged cuidará de chamar initGameLogic,
+    // que por sua vez chamará attachEvents() [corrigido] para os botões DA APP.
+});
+
+</script>
+</body>
+</html>

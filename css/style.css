@@ -1,35 +1,131 @@
-/* css/style.css (Exemplo, adicione seus estilos aqui) */
+/* css/style.css - CÓPIA FIEL DO ORIGINAL */
 
 :root {
-    --primary-color: #4CAF50; 
-    --secondary-color: #FF9800;
-    --bg-color: #f4f4f9;
-    --card-bg: #ffffff;
-    --text-color: #333;
+  --bg:#fafafa; --card:#ffffff; --muted:#7a7a7a;
+  --primary:#405de6; --secondary:#5851db; --accent:#ff2e63;
+  --success:#00c2a8; --shadow: 0 8px 30px rgba(0,0,0,0.06);
+  --rounded:12px;
+  --safe-pad:12px;
 }
+* {box-sizing:border-box}
+html,body {height:100%;min-height:100vh;margin:0;font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,#fff,#f6f9ff)}
 
-body {
-    font-family: sans-serif;
-    background-color: var(--bg-color);
-    margin: 0;
-    padding: 0;
-    color: var(--text-color);
+@supports (-webkit-touch-callout: none) {
+    html, body { min-height: -webkit-fill-available; height: -webkit-fill-available; }
 }
 
 .hidden { display: none !important; }
-/* ... (Estilos para .btn, .primary, .ghost) ... */
 
-/* Estilo do Botão Google */
-.google-btn {
-    background-color: #4285f4; 
-    color: white;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+/* --- LAYOUT ORIGINAL --- */
+.topbar {position:sticky;top:0;background:#fff;border-bottom:1px solid #eee;padding:10px 12px;display:flex;align-items:center;gap:12px;z-index:40}
+.logo {font-weight:800;color:transparent;background:linear-gradient(45deg,var(--primary),var(--secondary));-webkit-background-clip:text}
+.search {flex:1;max-width:640px}
+.search input {width:100%;padding:8px 12px;border-radius:20px;border:1px solid #eee;background:#fafafa}
+.icon-btn {background:transparent;border:none;font-size:18px;color:var(--muted);cursor:pointer}
+
+.container {max-width:1100px;margin:14px auto;padding:0 12px;display:grid;grid-template-columns:1fr 340px;gap:18px}
+@media(max-width:980px){.container{grid-template-columns:1fr}}
+
+/* Cards */
+.card {background:var(--card);border-radius:var(--rounded);box-shadow:var(--shadow);padding:14px; margin-bottom: 12px;} /* Add margin bottom fix */
+.profile {display:flex;gap:12px;align-items:center}
+.avatar {width:72px;height:72px;border-radius:50%;background:linear-gradient(45deg,var(--accent),var(--primary));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:20px;position:relative}
+.level {position:absolute;right:-6px;bottom:-6px;background:#fff;padding:6px;border-radius:50%;font-size:12px;border:1px solid #eee}
+.profile-info {flex:1}
+.xp-bar {height:10px;background:#eee;border-radius:20px;overflow:hidden;margin-top:8px}
+.xp-fill {height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));width:0;transition:width .5s}
+.profile-stats {display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.stat {background:#fbfbfd;padding:8px 10px;border-radius:10px;border:1px solid #f1f1f5;font-weight:700;font-size:13px}
+
+/* Mission / Challenge */
+.mission-header {display:flex;justify-content:space-between;align-items:center}
+.upload-area {border:2px dashed rgba(0,0,0,0.06);border-radius:12px;padding:12px;display:flex;gap:12px;align-items:center;cursor:pointer}
+.upload-preview {max-width:100%;border-radius:10px;margin-top:8px}
+
+/* Daily Grid */
+.daily-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:10px}
+.daily-card {background:#fff;border-radius:10px;padding:10px;border:1px solid #f3f3f8;cursor:pointer;text-align:center}
+.daily-thumb {width:100%;height:110px;object-fit:cover;border-radius:8px}
+.daily-card.completed {background:linear-gradient(135deg,#f8fff8,#f0fff0);border-color:#00c2a8;cursor:default}
+
+/* Validation & Fitness */
+.validation-steps {display:flex;gap:8px;margin-top:12px}
+.v-step {flex:1;padding:8px;border-radius:8px;background:#fafafa;border:1px solid #eee;text-align:center;font-weight:700;color:var(--muted)}
+.v-step.active {background:linear-gradient(90deg,var(--primary),var(--secondary));color:#fff;box-shadow:var(--shadow)}
+.fitness-controls {display:flex;gap:8px;align-items:center;margin-top:10px}
+
+/* Sidebar & Tabs */
+.rewards-tabs {display:flex;gap:8px;margin-top:10px}
+.tab {flex:1;padding:8px;border-radius:8px;background:#fafafa;border:1px solid #eee;text-align:center;cursor:pointer}
+.tab.active {background:linear-gradient(90deg,var(--primary),var(--secondary));color:#fff}
+
+/* Album & Modals */
+.album-grid {display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.album-thumb {width:100%;height:100px;object-fit:cover;border-radius:8px;cursor:pointer}
+.modal {position:fixed;left:0;top:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:200}
+.modal-card {width:92%;max-width:900px;background:#fff;border-radius:12px;padding:16px}
+
+/* Buttons & Typography */
+.btn {padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+.btn.primary {background:linear-gradient(90deg,var(--primary),var(--secondary));color:#fff}
+.btn.ghost {background:transparent;border:1px solid #ddd;color:#333}
+.btn.success {background:var(--success);color:#fff}
+.btn.mini {padding: 6px 10px; font-size: 12px;}
+.small-muted {font-size:13px;color:var(--muted)}
+
+/* Shop & Tasks */
+.shop-item {display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid #f0f0f0; border-radius: 8px; margin-bottom: 8px;}
+.notice {padding:8px;border-radius:8px;background:linear-gradient(90deg,#f7fbff,#fff);border:1px solid #e6f0ff; margin-bottom: 8px;}
+
+/* Login Specifics */
+.auth-card {max-width: 350px; margin: 100px auto; text-align: center;}
+#authContainer input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; background: #fafafa;}
+.google-btn {background-color: #4285f4; color: white; width:100%; margin-top:10px; display:flex; align-items:center; justify-content:center;}
+
+/* Bottom Nav */
+.bottom-nav {position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #eee;display:none;justify-content:space-around;padding:8px;z-index:50}
+.nav-item {display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer}
+.nav-item.active {color:var(--primary)}
+
+@media(max-width:768px){
+  .bottom-nav {display:flex}
+  .container {padding-bottom:60px}
+  
+  .ach-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill,minmax(120px,1fr));
+    gap: 10px;
 }
-.google-btn i {
-    margin-right: 10px;
-    font-size: 1.1em;
+
+.ach-item {
+    padding: 10px;
+    text-align: center;
+    border-radius: 10px;
+    background: #f7f7f7;
+    border: 1px solid #eee;
 }
-/* ... (Estilos de Layout, Cards, XP Bar, Toast) ... */
+.ach-item.completed {
+    background: #d7ffd7;
+    border-color: #7ccc7c;
+}
+
+  
+  /* Animação suave da barra de XP */
+.xp-fill {
+    transition: width 0.8s ease-out;
+}
+
+/* Efeito ao subir de nível */
+.level-up-animate {
+    animation: pop 0.6s ease-out;
+}
+
+@keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.25); }
+    100% { transform: scale(1); }
+}
+
+  
+}
+

@@ -2,11 +2,11 @@
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Selfie Quest</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
-    
+    <link rel="stylesheet" href="css/style.css?v=5"> 
+
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -16,24 +16,23 @@
 
     <div id="authContainer" class="hidden">
         <div class="card auth-card">
-            <div class="logo"><i class="fas fa-camera-retro"></i> Selfie Quest</div>
-            
+            <div class="logo" style="font-size: 24px; margin-bottom: 20px;">
+                <i class="fas fa-camera-retro"></i> Selfie Quest
+            </div>
             <form id="loginForm">
                 <input type="email" id="loginEmail" placeholder="Email" required>
                 <input type="password" id="loginPassword" placeholder="Senha" required>
-                <button type="submit" class="btn primary">Entrar</button>
-                <button type="button" class="btn ghost" id="btnShowRegister">Criar conta</button>
+                <button type="submit" class="btn primary" style="width:100%">Entrar</button>
+                <button type="button" class="btn ghost" id="btnShowRegister" style="width:100%; margin-top:8px">Criar conta</button>
             </form>
             <form id="registerForm" class="hidden">
                 <input type="text" id="regName" placeholder="Nome de Usuário" required>
                 <input type="email" id="regEmail" placeholder="Email" required>
                 <input type="password" id="regPass" placeholder="Senha" required>
-                <button type="submit" class="btn primary">Cadastrar</button>
-                <button type="button" class="btn ghost" id="btnShowLogin">Voltar ao Login</button>
+                <button type="submit" class="btn primary" style="width:100%">Cadastrar</button>
+                <button type="button" class="btn ghost" id="btnShowLogin" style="width:100%; margin-top:8px">Voltar ao Login</button>
             </form>
-
             <hr style="margin: 15px 0;">
-            
             <button type="button" class="btn google-btn" id="btnGoogleLogin">
                 <i class="fab fa-google"></i> Entrar com Google
             </button>
@@ -41,60 +40,213 @@
     </div>
 
     <div id="appContainer" class="hidden">
+
         <div class="topbar">
-            <div class="logo">Selfie Quest</div>
-            <button class="icon-btn" id="btnLogout"><i class="fas fa-sign-out-alt"></i></button>
+            <div class="logo"><i class="fas fa-camera-retro"></i> Selfie Quest</div>
+            <div class="search"><input id="globalSearch" placeholder="Buscar..."></div>
+            <div>
+                <button class="icon-btn" id="btnNotifs"><i class="fas fa-bell"></i></button>
+                <button class="icon-btn" id="btnLogout"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
         </div>
 
         <div class="container">
             <main>
                 <div class="card profile">
+                    <div style="position:relative">
+                        <div class="avatar" id="avatar">SQ</div>
+                        <div class="level" id="level">0</div>
+                    </div>
                     <div class="profile-info">
-                        <h2 id="uiPlayerName">Carregando...</h2>
-                        <div class="xp-bar"><div class="xp-fill" id="uiXpFill"></div></div>
-                        <div class="stats-row">
-                            <span>Nível: <b id="uiLevel">0</b></span>
-                            <span>Pontos: <b id="uiPoints">0</b></span>
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+                            <div>
+                                <div id="playerName" style="font-weight:800;font-size:18px">Carregando...</div>
+                                <div class="small-muted" id="xpText">0 XP</div>
+                            </div>
+                            <div style="text-align:right">
+                                <button class="btn ghost" id="openAlbumBtn"><i class="fas fa-images"></i> Álbum</button>
+                            </div>
+                        </div>
+                        <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+                        <div class="profile-stats">
+                            <div class="stat">Seguidores: <span id="followers">0</span></div>
+                            <div class="stat">Seguindo: <span id="following">0</span></div>
+                            <div class="stat">Tokens: <span id="tokens">0</span></div>
+                            <div class="stat">Pontos: <span id="pointsValue">0</span></div>
                         </div>
                     </div>
                 </div>
 
-                <section class="card" id="challengesSection">
-                    <h3>Desafios Atuais</h3>
-                    <div id="dailyGrid" class="daily-grid">
-                        <p>Lista de desafios aqui...</p>
+                <section class="card mission">
+                    <div class="mission-header">
+                        <div>
+                            <div class="small-muted">Desafio Semanal</div>
+                            <div id="weeklyTitle" style="font-weight:800">Selfie com Pet</div>
+                            <div class="small-muted" id="weeklyDesc">Tire uma foto com um animal.</div>
+                            <div class="small-muted" style="color:var(--success); margin-top:4px">
+                                <i class="fas fa-coins"></i> +50 Pontos • <i class="fas fa-star"></i> +100 XP
+                            </div>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end" id="weeklyControlArea">
+                            <button class="btn primary" id="btnUploadWeekly"><i class="fas fa-camera"></i> Enviar</button>
+                        </div>
                     </div>
                 </section>
 
-                <section class="card" id="cameraSection">
-                    <h3>Novo Desafio: Selfie do Dia!</h3>
-                    <form id="uploadForm">
-                        <input type="file" id="imageUpload" accept="image/*" required style="margin-bottom: 15px;">
-                        
-                        <select id="challengeSelect" required style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px;">
-                            <option value="" disabled selected>Selecione o Desafio</option>
-                            <option value="selfie_sol">Selfie com o Sol (+20P, +150XP)</option>
-                            <option value="selfie_pet">Selfie com o Pet (+15P, +100XP)</option>
-                            <option value="selfie_natureza">Selfie na Natureza (+30P, +200XP)</option>
-                        </select>
-
-                        <button type="submit" class="btn primary" id="btnUploadSelfie">
-                            <i class="fas fa-cloud-upload-alt"></i> Enviar Selfie
-                        </button>
-                    </form>
+                <section class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <div>
+                            <div style="font-weight:800">Desafios Diários</div>
+                            <div class="small-muted">Novos desafios todos os dias</div>
+                        </div>
+                        <div class="small-muted" id="dailyCount">3 desafios</div>
+                    </div>
+                    <div id="dailyGrid" class="daily-grid">
+                        </div>
                 </section>
 
+                <section class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <div>
+                            <div class="small-muted">Modo Fitness</div>
+                            <div style="font-weight:800">Ganhe pontos por atividade</div>
+                        </div>
+                        <div style="font-weight:800" id="fitnessTime">00:00</div>
+                    </div>
+                    <div class="fitness-controls">
+                        <button class="btn primary" id="fitnessStart">Iniciar</button>
+                        <button class="btn ghost" id="fitnessStop" disabled>Parar</button>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <strong>Histórico</strong>
+                        <button class="btn ghost" id="clearHistory">Limpar</button>
+                    </div>
+                    <div class="history-list" id="historyList"></div>
+                </section>
             </main>
             
-            <aside>
-                <div class="card">
-                    <h3>Ranking</h3>
-                    <div id="rankingList">Carregando Ranking...</div>
-                </div>
-            </aside>
+          <section class="card" id="achievementsCard">
+            <h3>Conquistas</h3>
+              <div id="achievementsGrid" class="ach-grid"></div>
+          </section>  
+
+<aside>
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong>Recompensas</strong>
+            <button class="btn ghost mini">Ver tudo</button>
+        </div>
+        <div class="rewards-tabs" style="margin-top:10px">
+            <div class="tab active" id="tabDaily">Diárias</div>
+            <div class="tab" id="tabWeekly">Semanal</div>
+            <div class="tab" id="tabMonthly">Mensal</div>
+        </div>
+        <div id="rewardsList" style="margin-top:12px">
+            <div class="notice">Carregando recompensas...</div>
         </div>
     </div>
 
-    <script type="module" src="js/app.js"></script>
+    <div class="card" style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong>Ranking</strong>
+            <button class="btn ghost mini">Ver</button>
+        </div>
+        <div id="rankingList" style="margin-top:10px">
+            <div class="skeleton" style="height:30px; margin-bottom:5px"></div>
+            <div class="skeleton" style="height:30px; margin-bottom:5px"></div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+        <strong>Tarefas Rápidas</strong>
+        <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+            <div class="shop-item">
+                <div>
+                    <div style="font-weight:700; font-size:13px">Responder Questionários</div>
+                    <div class="small-muted"><i class="fas fa-coins"></i> +15 Pts</div>
+                </div>
+                <button class="btn primary mini" id="btnTaskQuiz">Responder</button>
+            </div>
+            <div class="shop-item">
+                <div>
+                    <div style="font-weight:700; font-size:13px">Assistir Anúncios</div>
+                    <div class="small-muted"><i class="fas fa-coins"></i> +10 Pts</div>
+                </div>
+                <button class="btn primary mini" id="btnTaskAd">Assistir</button>
+            </div>
+            <div class="shop-item">
+                <div>
+                    <div style="font-weight:700; font-size:13px">Validar Fotos</div>
+                    <div class="small-muted"><i class="fas fa-coins"></i> +20 Pts</div>
+                </div>
+                <button class="btn primary mini" id="btnTaskValidate">Validar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+        <strong>Loja de Tokens</strong>
+        <div id="shopList" style="margin-top:10px">
+            <div class="shop-item">
+                <div>
+                    <div style="font-weight:700; font-size:13px">Filtro Exclusivo</div>
+                    <div class="small-muted">10 Tokens</div>
+                </div>
+                <button class="btn ghost mini" id="btnBuyFilter">Comprar</button>
+            </div>
+            <div class="shop-item">
+                <div>
+                    <div style="font-weight:700; font-size:13px">Boost de XP (1h)</div>
+                    <div class="small-muted">50 Tokens</div>
+                </div>
+                <button class="btn ghost mini" id="btnBuyBoost">Comprar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong>Convidar Amigos</strong>
+            <button class="btn primary mini" id="btnInvite">Convidar</button>
+        </div>
+        <div class="small-muted" style="margin-top:8px; text-align:center">
+            <i class="fas fa-coins"></i> +30 Pontos • <i class="fas fa-star"></i> +50 XP por amigo
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:12px; border-top:4px solid var(--primary)">
+        <div style="font-weight:800">Trocar Pontos por Tokens</div>
+        <div class="small-muted" style="margin-top:6px; font-size:12px">
+            Taxa: 100 Pontos = 80 Tokens
+        </div>
+        <div style="margin-top:8px;display:flex;gap:8px">
+            <input id="exchangeInput" type="number" placeholder="Qtd Pontos" style="width:100%;padding:6px;border-radius:6px;border:1px solid #eee">
+            <button class="btn primary mini" id="btnExchange">Trocar</button>
+        </div>
+    </div>
+</aside>
+        </div>
+
+        <div class="bottom-nav">
+            <button class="nav-item active"><i class="fas fa-home"></i><span>Início</span></button>
+            <button class="nav-item"><i class="fas fa-images"></i><span>Álbum</span></button>
+            <button class="nav-item"><i class="fas fa-gift"></i><span>Recompensas</span></button>
+        </div>
+        
+        <div id="chooserModal" class="modal">
+            <div class="modal-card">
+                <h3>Enviar Foto</h3>
+                <input type="file" id="imageUploadInput" style="margin:10px 0; width:100%">
+                <div style="display:flex; gap:10px; justify-content:flex-end">
+                    <button class="btn ghost" id="chooserClose">Cancelar</button>
+                    <button class="btn primary" id="chooserConfirm">Enviar</button>
+                </div>
+            </div>
+        </div>
+
+    </div> <script type="module" src="js/app.js"></script>
 </body>
 </html>
