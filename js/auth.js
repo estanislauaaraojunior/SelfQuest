@@ -4,19 +4,13 @@ import { auth, FieldValue } from './firebase-config.js';
 import { UserService } from './db.js';
 import { showToast } from './utils.js';
 
-// =======================================================
 // Lógica de Email e Senha
-// =======================================================
 
-/**
- * Cria uma conta no Firebase Auth e o perfil no Firestore.
- */
 export async function handleRegister(name, email, password) {
     try {
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
         
-        // Cria o documento inicial no Firestore
         const profileData = {
             playerName: name, 
             xp: 0,
@@ -33,9 +27,6 @@ export async function handleRegister(name, email, password) {
     }
 }
 
-/**
- * Faz login com Email e Senha.
- */
 export async function handleEmailPasswordLogin(email, password) {
     try {
         await auth.signInWithEmailAndPassword(email, password);
@@ -47,25 +38,17 @@ export async function handleEmailPasswordLogin(email, password) {
 }
 
 
-// =======================================================
-// Lógica de Login com Google (NOVO)
-// =======================================================
+// Lógica de Login com Google (Já implementada)
 
-/**
- * Faz login usando o pop-up do Google.
- */
 export async function handleGoogleLogin() {
     const provider = new auth.GoogleAuthProvider();
     
     try {
         const result = await auth.signInWithPopup(provider);
         const user = result.user;
-        
-        // Verifica se é o primeiro login (isNewUser)
         const isNewUser = result.additionalUserInfo.isNewUser;
 
         if (isNewUser) {
-            // Se for novo, cria o perfil padrão no Firestore
             const profileData = {
                 playerName: user.displayName || user.email.split('@')[0], 
                 xp: 0,
@@ -80,15 +63,11 @@ export async function handleGoogleLogin() {
         }
         
     } catch (error) {
-        // Trata erros de pop-up fechado ou falha de autenticação
         showToast(`Erro ao logar com Google: ${error.message}`, 'error');
         console.error("Google Login Error:", error);
     }
 }
 
-/**
- * Sai da conta atual.
- */
 export async function handleLogout() {
     try {
         await auth.signOut();
