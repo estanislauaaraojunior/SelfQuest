@@ -5,7 +5,7 @@
   },
   "hosting": {
     // ESTA LINHA DEVE SER UM PONTO FINAL
-    "public": "SelfQuest", 
+    "public": "public", 
     "ignore": [
       "firebase.json",
       "**/.*",
