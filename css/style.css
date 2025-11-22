@@ -1,8 +1,8 @@
-/* css/style.css */
+/* css/style.css (Exemplo, adicione seus estilos aqui) */
 
 :root {
-    --primary-color: #4CAF50; /* Verde */
-    --secondary-color: #FF9800; /* Laranja */
+    --primary-color: #4CAF50; 
+    --secondary-color: #FF9800;
     --bg-color: #f4f4f9;
     --card-bg: #ffffff;
     --text-color: #333;
@@ -17,145 +17,19 @@ body {
 }
 
 .hidden { display: none !important; }
+/* ... (Estilos para .btn, .primary, .ghost) ... */
 
-/* Botões */
-.btn {
-    padding: 10px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background-color 0.3s;
-    width: 100%;
-    margin-top: 10px;
-}
-
-.primary {
-    background-color: var(--primary-color);
-    color: white;
-}
-.primary:hover { background-color: #45a049; }
-
-.ghost {
-    background-color: transparent;
-    color: var(--primary-color);
-    border: 1px solid var(--primary-color);
-}
-.ghost:hover { background-color: var(--primary-color); color: white; }
-
-.icon-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1.5rem;
-    color: white;
-}
-
-/* Novo Botão Google */
+/* Estilo do Botão Google */
 .google-btn {
-    background-color: #4285f4; /* Cor azul do Google */
+    background-color: #4285f4; 
     color: white;
     border: none;
     display: flex;
     align-items: center;
     justify-content: center;
 }
-
 .google-btn i {
     margin-right: 10px;
     font-size: 1.1em;
 }
-
-.google-btn:hover {
-    background-color: #357ae8;
-}
-
-
-/* Layout e Cards */
-.topbar {
-    background-color: var(--primary-color);
-    color: white;
-    padding: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.container {
-    max-width: 1200px;
-    margin: 20px auto;
-    padding: 0 20px;
-    display: flex;
-    gap: 20px;
-}
-
-main { flex: 3; }
-aside { flex: 1; }
-
-.card {
-    background-color: var(--card-bg);
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    margin-bottom: 20px;
-}
-
-.auth-card {
-    max-width: 350px;
-    margin: 100px auto;
-    text-align: center;
-}
-.auth-card input {
-    width: 90%;
-    padding: 10px;
-    margin: 5px 0;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-/* Perfil e XP Bar */
-.profile {
-    display: flex;
-    align-items: center;
-}
-.profile-info {
-    flex-grow: 1;
-}
-.stats-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.9rem;
-}
-
-.xp-bar {
-    background-color: #eee;
-    height: 10px;
-    border-radius: 5px;
-    margin: 10px 0;
-    overflow: hidden;
-}
-.xp-fill {
-    height: 100%;
-    width: 0%; /* Controlado pelo JS */
-    background-color: var(--secondary-color);
-    transition: width 0.5s ease;
-}
-
-/* Ranking e Toast */
-.ranking-item {
-    padding: 5px 0;
-    border-bottom: 1px solid #eee;
-}
-.toast {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    padding: 10px 20px;
-    border-radius: 5px;
-    color: white;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    z-index: 1000;
-}
-.toast-success { background-color: var(--primary-color); }
-.toast-error { background-color: #f44336; }
-.toast-info { background-color: #2196F3; }
+/* ... (Estilos de Layout, Cards, XP Bar, Toast) ... */
