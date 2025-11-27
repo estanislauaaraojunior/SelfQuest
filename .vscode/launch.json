@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Depurar no Chrome",
+            "url": "http://localhost:5500",
+            "webRoot": "${workspaceFolder}",
+            "file": "${workspaceFolder}/index.html",
+            "runtimeArgs": [
+                "--disable-web-security"
+            ]
+        },
+        {
+            "type": "msedge",
+            "request": "launch",
+            "name": "Depurar no Edge",
+            "url": "http://localhost:5500",
+            "webRoot": "${workspaceFolder}",
+            "file": "${workspaceFolder}/index.html"
+        }
+    ]
+}
